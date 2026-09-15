@@ -13,7 +13,7 @@ de payload liées à getInfo() sur de grandes collections.
 Pré-requis :
     pip install earthengine-api pandas
 
-Auteur : généré avec Claude
+Auteur : généré avec Claude, relu et corrigé par Ghislain Vieilledent
 """
 
 import time
@@ -25,8 +25,8 @@ import pandas as pd
 # 1. CONFIGURATION - à adapter
 # ---------------------------------------------------------------------------
 
-PROJECT_ID = "deforisk"          # votre project ID GCP lié à Earth Engine
-INPUT_CSV = "../data/df_year.csv"             # fichier d'entrée, colonnes 'lat' et 'lon'
+PROJECT_ID = "deforisk"               # votre project ID GCP lié à Earth Engine
+INPUT_CSV = "../data/df_surfor.csv"   # fichier d'entrée, colonnes 'lat' et 'lon'
 OUTPUT_CSV = "resultats_gfc_tmf.csv"  # fichier de sortie
 LAT_COL = "lat"
 LON_COL = "lon"
@@ -187,7 +187,7 @@ resultats = image_combinee.reduceRegions(fc, ee.Reducer.first(), scale=SCALE)
 
 task = ee.batch.Export.table.toDrive(
     collection=resultats,
-    description="extraction_gfc_tmf",
+    description="extracting_gfc_tmf",
     fileFormat="CSV"
 )
 task.start()
