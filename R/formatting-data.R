@@ -46,28 +46,29 @@ df_2021 <- df_2021 |>
 df_change <- df_2008 |>
   full_join(df_2000, by=c("plotid", "sampleid"), suffix=c("", "_t1")) |>
   full_join(df_2021, by=c("plotid", "sampleid"), suffix=c("", "_t3")) |>
-  rename(fcc2008=Classification) |>
-  rename(fcc2000=Classification_t1) |>
-  rename(fcc2021=Classification_t3) |>
+  rename(for2008=Classification) |>
+  rename(for2000=Classification_t1) |>
+  rename(for2021=Classification_t3) |>
   select(!ends_with("_t1")) |>
   select(!ends_with("_t3"))
 
 # Get data on forest cover change
 df_change <- df_change |>
   # fcc_p1
-  mutate(fcc_p1=ifelse(fcc2000=="Forêt" & fcc2008=="Forêt", "stableF", NA)) |>
-  mutate(fcc_p1=ifelse(fcc2000=="Non Forêt" & fcc2008=="Non Forêt", "stableNF", fcc_p1)) |>
-  mutate(fcc_p1=ifelse(fcc2000=="Forêt" & fcc2008=="Non Forêt", "loss", fcc_p1)) |>
-  mutate(fcc_p1=ifelse(fcc2000=="Non Forêt" & fcc2008=="Forêt", "gain", fcc_p1)) |>
+  mutate(fcc_p1=ifelse(for2000=="Forêt" & for2008=="Forêt", "stableF", NA)) |>
+  mutate(fcc_p1=ifelse(for2000=="Non Forêt" & for2008=="Non Forêt", "stableNF", fcc_p1)) |>
+  mutate(fcc_p1=ifelse(for2000=="Forêt" & for2008=="Non Forêt", "loss", fcc_p1)) |>
+  mutate(fcc_p1=ifelse(for2000=="Non Forêt" & for2008=="Forêt", "gain", fcc_p1)) |>
   # fcc_p2
-  mutate(fcc_p2=ifelse(fcc2008=="Forêt" & fcc2021=="Forêt", "stableF", NA)) |>
-  mutate(fcc_p2=ifelse(fcc2008=="Non Forêt" & fcc2021=="Non Forêt", "stableNF", fcc_p2)) |>
-  mutate(fcc_p2=ifelse(fcc2008=="Forêt" & fcc2021=="Non Forêt", "loss", fcc_p2)) |>
-  mutate(fcc_p2=ifelse(fcc2008=="Non Forêt" & fcc2021=="Forêt", "gain", fcc_p2))
+  mutate(fcc_p2=ifelse(for2008=="Forêt" & for2021=="Forêt", "stableF", NA)) |>
+  mutate(fcc_p2=ifelse(for2008=="Non Forêt" & for2021=="Non Forêt", "stableNF", fcc_p2)) |>
+  mutate(fcc_p2=ifelse(for2008=="Forêt" & for2021=="Non Forêt", "loss", fcc_p2)) |>
+  mutate(fcc_p2=ifelse(for2008=="Non Forêt" & for2021=="Forêt", "gain", fcc_p2))
 
 # Get data on forest cover in 2021
 file_for2021 <- "raster-intersect_ceo-38675-samples_F-NF-2021.csv"
 df_for2021 <- read_csv(here("data_raw", file_for2021), show_col_types=FALSE) |>
+  select(-c(17:22)) |>
   mutate(dataset="for2021") |>
   rename(for2021_fnf=Classification)
 
@@ -82,23 +83,24 @@ df_surfor <- df_change |>
 # system("python ../python/get-gee-data.py")
 
 # Combining data-sets
-df_gee <- read_csv(here("data", "extracting_gfc_tmf.csv"), show_col_types=FALSE)
+df_gee <- read_csv(here("data", "extracting_gfc_tmf.csv"), show_col_types=FALSE) |>
+  select(-lat, -lon)
 df_surfor_gee <- read_csv(here("data", "df_surfor.csv"), show_col_types=FALSE) |>
   bind_cols(df_gee) |>
   mutate(for2000 = factor(case_match(
-    fcc2000,
+    for2000,
     "Forêt" ~ "Forest",
     "Non Forêt" ~ "NonForest",
     .default = NA
   ))) |>
   mutate(for2008 = factor(case_match(
-    fcc2008,
+    for2008,
     "Forêt" ~ "Forest",
     "Non Forêt" ~ "NonForest",
     .default = NA
   ))) |>
   mutate(for2021 = factor(case_match(
-    fcc2021,
+    for2021,
     "Forêt" ~ "Forest",
     "Non Forêt" ~ "NonForest",
     .default = NA

@@ -80,7 +80,8 @@ def extraire_chunk(df_chunk, image, lat_col, lon_col, scale):
     features = [
         ee.Feature(
             ee.Geometry.Point([row[lon_col], row[lat_col]]),
-            {"id": idx}  # conserve l'index original du DataFrame pour la jointure
+            # conserve l'index original du DataFrame pour la jointure
+            {"id": idx, lat_col: row[lat_col], lon_col: row[lon_col]}
         )
         for idx, row in df_chunk.iterrows()
     ]
@@ -168,17 +169,20 @@ if __name__ == "__main__":
     main()
 
 
-# ---------------------------------------------------------------------------
-# ALTERNATIVE : export via Google Drive (plus robuste pour de très gros volumes,
-# ne dépend pas de la stabilité de la connexion locale)
-# ---------------------------------------------------------------------------
+# ---------------------------------------------------------------------
+# ALTERNATIVE : export via Google Drive (plus robuste pour de très gros
+# volumes, ne dépend pas de la stabilité de la connexion locale).
+# ---------------------------------------------------------------------
 
 initialiser_ee(PROJECT_ID)
 df = pd.read_csv(INPUT_CSV).reset_index(drop=True)
 image_combinee = construire_image_combinee()
 
 features = [
-    ee.Feature(ee.Geometry.Point([row[LON_COL], row[LAT_COL]]), {"id": idx})
+    ee.Feature(
+        ee.Geometry.Point([row[LON_COL], row[LAT_COL]]),
+        {"id": idx, LAT_COL: row[LAT_COL], LON_COL: row[LON_COL]}
+    )
     for idx, row in df.iterrows()
 ]
 fc = ee.FeatureCollection(features)
