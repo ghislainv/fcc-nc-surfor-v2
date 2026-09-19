@@ -1,4 +1,4 @@
-"""Comparison with Birnbaum forest cover map in 2015."""
+"""Comparison with AMAP forest cover map in 2015."""
 
 import os
 from pathlib import Path
@@ -14,7 +14,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
-from matplotlib.colors import ListedColormap
+from matplotlib.colors import ListedColormap, BoundaryNorm
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 # Working directory
 os.chdir("..")
@@ -58,7 +59,7 @@ land = gdal.Rasterize(
 land = None
 
 # ========================================================
-# Get Birnbaum map (~2015)
+# Get AMAP map (~2015)
 # ========================================================
 
 # Data download
@@ -72,7 +73,7 @@ with open(destfile, "wb") as f:
         f.write(chunk)
 
 # Uncompress
-amap_dir = out_dir / "amap_carto_3k_20240715"
+amap_dir = out_dir / "amap"
 os.makedirs(amap_dir, exist_ok=True)
 with zipfile.ZipFile(destfile, "r") as zip_ref:
     zip_ref.extractall(amap_dir)
@@ -104,7 +105,7 @@ gdal.VectorTranslate(
 )
 
 # Rasterize
-raster_file = amap_dir / "forest_birn.tif"
+raster_file = amap_dir / "forest_amap.tif"
 for2015 = gdal.Rasterize(
     str(raster_file),
     str(gpkg_file),
@@ -123,8 +124,8 @@ for2015 = None
 
 # Combining forest with land
 raster1 = out_dir / "gadm-newcal" / "grande-terre.tif"
-raster2 = amap_dir / "forest_birn.tif"
-result = amap_dir / "land_forest_birn.tif"
+raster2 = amap_dir / "forest_amap.tif"
+result = amap_dir / "land_forest_amap.tif"
 with rasterio.open(raster1) as src1, rasterio.open(raster2) as src2:
     profile = src1.profile
     profile.update(dtype="uint8", nodata=255, compress="deflate", predictor=2,
@@ -144,15 +145,15 @@ with rasterio.open(raster1) as src1, rasterio.open(raster2) as src2:
 land_area = 0
 forest_area = 0
 pixel_area = 30 * 30 / 10000
-file = amap_dir / "land_forest_birn.tif"
+file = amap_dir / "land_forest_amap.tif"
 with rasterio.open(file, "r") as src:
     for _, window in src.block_windows(1):
         data = src.read(1, window=window)
         land_area += np.sum(np.isin(data, [0, 1])) * pixel_area
         forest_area += np.sum(data == 1) * pixel_area
-land_area_birn = np.round(land_area).astype(int)
-forest_area_birn = np.round(forest_area).astype(int)
-forest_perc_birn = np.round(100 * forest_area / land_area).astype(int)
+land_area_amap = np.round(land_area).astype(int)
+forest_area_amap = np.round(forest_area).astype(int)
+forest_perc_amap = np.round(100 * forest_area / land_area).astype(int)
 
 # ========================================================
 # Get GFC with geefcc
@@ -313,11 +314,11 @@ forest_perc_tmf = np.round(100 * forest_area / land_area).astype(int)
 # Comparison
 # ========================================================
 
-# Confusion matrix Birn / GFC
-rasterA = amap_dir / "land_forest_birn.tif"
+# Confusion matrix Amap / GFC
+rasterA = amap_dir / "land_forest_amap.tif"
 rasterB = gfc_dir / "land_forest_gfc.tif"
-otif = gfc_dir / "comp_birn_gfc.tif"
-ocsv = comp = gfc_dir / "comp_birn_gfc.csv"
+otif = gfc_dir / "comp_amap_gfc.tif"
+ocsv = comp = gfc_dir / "comp_amap_gfc.csv"
 (ff, fn, nf, nn) = (0, 0, 0, 0)
 with rasterio.open(rasterA) as srcA, rasterio.open(rasterB) as srcB:
     profile = srcA.profile
@@ -356,11 +357,11 @@ pe = np.sum(row_totals * col_totals) / (total_pixels ** 2)
 kappa = (overall_accuracy - pe) / (1 - pe)
 (OA_gfc, K_gfc) = np.round((overall_accuracy, kappa), 2)
 
-# Confusion matrix Birn / TMF
-rasterA = amap_dir / "land_forest_birn.tif"
+# Confusion matrix Amap / TMF
+rasterA = amap_dir / "land_forest_amap.tif"
 rasterB = tmf_dir / "land_forest_tmf.tif"
-otif = tmf_dir / "comp_birn_tmf.tif"
-ocsv = comp = tmf_dir / "comp_birn_tmf.csv"
+otif = tmf_dir / "comp_amap_tmf.tif"
+ocsv = comp = tmf_dir / "comp_amap_tmf.csv"
 (ff, fn, nf, nn) = (0, 0, 0, 0)
 with rasterio.open(rasterA) as srcA, rasterio.open(rasterB) as srcB:
     profile = srcA.profile
@@ -401,90 +402,142 @@ kappa = (overall_accuracy - pe) / (1 - pe)
 
 # Table synthesizing the results
 data = {
-    "source": ["birn", "gfc", "tmf"],
+    "source": ["amap", "gfc", "tmf"],
     "year": [2015, 2015, 2015],
     "tc": ["", 60, ""],
-    "forest_area": [forest_area_birn, forest_area_gfc, forest_area_tmf],
-    "perc": [forest_perc_birn, forest_perc_gfc, forest_perc_tmf],
+    "forest_area": [forest_area_amap, forest_area_gfc, forest_area_tmf],
+    "perc": [forest_perc_amap, forest_perc_gfc, forest_perc_tmf],
     "OA": ["", OA_gfc, OA_tmf],
     "Kappa": ["", K_gfc, K_tmf]
 }
-ofile = Path("outputs", "comp_fc2021_birn_gfc_tmf.csv")
+ofile = Path("outputs", "comp_fc2021_amap_gfc_tmf.csv")
 df = pd.DataFrame(data).to_csv(ofile, index=False)
+
 
 # ========================================================
 # Plots
 # ========================================================
 
-# TMF vs. Birn
+# TMF vs. Amap
 # Colors
-cols = [(0, 0, 0, 255),      # black for 0
-        (34, 139, 34, 255),  # green for 1
-        (10, 10, 150, 255),  # blue for 2
-        (200, 200, 0, 255),  # orange for 3
-        (255, 255, 255, 0)]  # transparent white for 255
-cmax = 255.0
-colors = []
-for col in cols:
-    col_class = tuple([i / cmax for i in col])
-    colors.append(col_class)
+cols = [
+    (211, 211, 211, 255),  # 0: light grey
+    (34, 139, 34, 255),    # 1: green
+    (10, 10, 150, 255),    # 2: blue
+    (200, 200, 0, 255),    # 3: orange
+    (255, 255, 255, 0)     # 255: transparent
+]
+colors = [tuple(i / 255.0 for i in col) for col in cols]
 color_map = ListedColormap(colors)
 
+# Map 255 for the last color
+bounds_norm = [0, 1, 2, 3, 4, 256]
+norm = BoundaryNorm(bounds_norm, color_map.N)
+
 # Labels
-labels = {0: "non-forest tmf / non-forest amap", 1: "forest tmf / forest amap",
-          2: "non-forest tmf / forest amap", 3: "forest tmf / non-forest amap"}
-patches = [mpatches.Patch(
-    facecolor=col, edgecolor="black",
-    label=labels[i]) for (i, col) in enumerate(colors[:-1])]
+labels = {
+    0: "non-forest TMF / non-forest AMAP",
+    1: "forest TMF / forest AMAP",
+    2: "non-forest TMF / forest AMAP",
+    3: "forest TMF / non-forest AMAP"
+}
+patches = [
+    mpatches.Patch(facecolor=colors[i], edgecolor="black", label=labels[i])
+    for i in range(4)
+]
 
-# 1. File paths
-ifile = tmf_dir / "comp_birn_tmf.tif"
-opng = tmf_dir / "comp_birn_tmf.png"
+# File paths
+ifile = tmf_dir / "comp_amap_tmf.tif"
+opng = tmf_dir / "comp_amap_tmf.png"
 
-# 2. Generate Overviews
+# Generate overviews
 factors = [2, 4, 8, 16]
 with rasterio.open(ifile, "r+") as dst:
-    dst.build_overviews(
-        factors,
-        resampling=Resampling.nearest
-    )
+    dst.build_overviews(factors, resampling=Resampling.nearest)
+# Select overview
+OV_ID = 1  # factor 4
 
-# 3. Choose the overview zoom level for plotting
-# index 0 = factor 2, 1 = factor 4, 2 = factor 8, 3 = factor 16
-overview_idx = 2
+# Defining zoom
+xmin, xmax = 525000, 575000
+ymin, ymax = 7610000, 7660000
 
-# 4. Read data and Plot
-with rasterio.open(ifile) as ds:
-    # Get the downsampling factor from the list (e.g., factors[2] = 8)
-    factor = ds.overviews(1)[overview_idx]
+with rasterio.open(ifile, overview_level=OV_ID) as ds:
+    data = ds.read(1)
 
-    # Calculate target dimensions by dividing original sizes by the factor
-    ov_height = int(ds.height / factor)
-    ov_width = int(ds.width / factor)
-
-    # Read only the downsampled pixels from the selected overview
-    data_resampled = ds.read(
-        1, 
-        out_shape=(ov_height, ov_width),
-        resampling=Resampling.nearest
-    )
-
-    # Get geographic boundaries (the spatial extent remains identical)
     bounds = ds.bounds
     extent = [bounds.left, bounds.right, bounds.bottom, bounds.top]
 
-    # Initialize the plot layout
-    fig = plt.figure()
-    ax = plt.subplot(111)
+    # Create figure
+    fig, ax = plt.subplots(figsize=(12, 8))
 
-    # Plot the lightweight data array (geographic extent maps correctly)
-    ax.imshow(data_resampled, cmap=color_map, extent=extent, interpolation="nearest")
-
+    # Main map
+    im = ax.imshow(
+        data,
+        cmap=color_map,
+        norm=norm,
+        extent=extent,
+        interpolation="nearest"
+    )
     ax.set_aspect("equal")
+    plt.xlim(bounds.left - 10000, bounds.right)
+    plt.ylim(bounds.bottom, bounds.top + 10000)
     plt.title("Difference between TMF and AMAP 2015 forest cover maps")
-    plt.legend(handles=patches, bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
 
-    # Save the output image and free up memory
+    # Legend positioned above the inset
+    leg = ax.legend(
+        handles=patches,
+        bbox_to_anchor=(1.05, 1.0),
+        loc="upper left",
+        borderaxespad=0.
+    )
+
+    # Rectangle for zoom
+    WIDTH = xmax - xmin
+    HEIGHT = ymax - ymin
+    rect = mpatches.Rectangle(
+        (xmin, ymin), WIDTH, HEIGHT,
+        linewidth=2, edgecolor="black", facecolor="none"
+    )
+    ax.add_patch(rect)
+
+    # Create the inset axis (positioned below the legend on the right)
+    # bbox_to_anchor=(X, Y, width, height) relative to the main axis
+    ax_inset = inset_axes(
+        ax,
+        width="100%",
+        height="100%",
+        # bbox_to_anchor=(1.0, 0.25, 0.45, 0.45),
+        bbox_to_anchor=(0.84, 0.15, 0.65, 0.65),
+        bbox_transform=ax.transAxes,
+        loc="upper left"
+    )
+
+    # Read raw data for the inset
+    with rasterio.open(ifile) as ds_full:
+        window = rasterio.windows.from_bounds(
+            xmin, ymin, xmax, ymax,
+            transform=ds_full.transform
+        )
+        data_inset = ds_full.read(1, window=window)
+        extent_inset = [xmin, xmax, ymin, ymax]
+
+    # Display data in the inset and crop
+    ax_inset.imshow(
+        data_inset,
+        cmap=color_map,
+        norm=norm,
+        extent=extent_inset,
+        interpolation="nearest"
+    )
+    ax_inset.set_xlim(xmin, xmax)
+    ax_inset.set_ylim(ymin, ymax)
+    ax_inset.set_aspect("equal")
+
+    # Optional: hide inset tick marks to lighten the visual
+    ax_inset.set_xticks([])
+    ax_inset.set_yticks([])
+
+    # Save
     fig.savefig(opng, bbox_inches="tight", dpi=100)
     plt.close(fig)
 
