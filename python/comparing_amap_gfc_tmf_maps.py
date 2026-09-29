@@ -93,7 +93,7 @@ srs = layer.GetSpatialRef()
 print(srs.ExportToWkt())
 ds = None
 
-# Shapefile -> GeoPackage
+# Shapefile --> GeoPackage
 gpkg_file = amap_dir / "amap_carto_3k_20240715.gpkg"
 gdal.VectorTranslate(
     str(gpkg_file),
@@ -410,9 +410,8 @@ data = {
     "OA": ["", OA_gfc, OA_tmf],
     "Kappa": ["", K_gfc, K_tmf]
 }
-ofile = Path("outputs", "comp_fc2021_amap_gfc_tmf.csv")
+ofile = Path("outputs", "comp_fc2015_amap_gfc_tmf.csv")
 df = pd.DataFrame(data).to_csv(ofile, index=False)
-
 
 # ========================================================
 # Plots
