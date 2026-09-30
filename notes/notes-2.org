@@ -1,0 +1,287 @@
+*** Voici des matrices de confusion pour différentes cartes de déforestation sur 2 périodes
+
+              gain loss stableF stableNF    map period
+gain...1         0    0       0        0 gfc_60     p1
+loss...2        45  371      50      358 gfc_60     p1
+stableF...3    310  179     631      567 gfc_60     p1
+stableNF...4   749  554    1177     3839 gfc_60     p1
+gain...5         0    0       0        0 gfc_60     p2
+loss...6        34  260     100      335 gfc_60     p2
+stableF...7    256  218     686      567 gfc_60     p2
+stableNF...8   481  649     641     3195 gfc_60     p2
+gain...9        38    8      50       37    tmf     p1
+loss...10      173  228     270      380    tmf     p1
+stableF...11   243  113     713      368    tmf     p1
+stableNF...12  650  755     825     3979    tmf     p1
+gain...13      153   30      71      216    tmf     p2
+loss...14       49  385     186      501    tmf     p2
+stableF...15   272  177     728      370    tmf     p2
+stableNF...16  297  535     442     3010    tmf     p2
+
+On remarque que pour la perte (loss), la confusion majeure est entre loss et stableNF (non-forêt stable). Comment cela peut s'expliquer ?
+
+** Confusion entre « loss » et « stableNF »
+
+C'est une confusion très classique dans les cartes de déforestation, qui s'explique par plusieurs mécanismes :
+
+*** 1. 🌿 Problème de définition du seuil de couvert forestier
+Les cartes comme *GFC (Hansen)* utilisent un seuil de couvert arboré (ex. 60% ici) pour définir la forêt. Une zone qui perd sa végétation peut :
+- être classée *loss* par la carte → mais référencée comme *stableNF* sur le terrain si elle n'atteignait *jamais vraiment le seuil* de définition forestière
+
+*** 2. 📅 Décalage temporel entre la carte et la référence
+- La perte peut avoir eu lieu *juste avant ou juste après* la fenêtre temporelle analysée
+- Ce qui est « loss » dans la carte correspond à une zone déjà non-forestière dans la référence terrain → classée *stableNF*
+
+*** 3. 🗺️ Problème de géolocalisation / décalage spatial
+- Un léger *décalage entre pixels* (misregistration) peut faire qu'une perte détectée correspond spatialement à une zone déjà non-forestière dans la référence
+
+*** 4. 🌱 Végétation non-forestière détectée comme perte
+- Des *formations arbustives ou jachères* avec signal de perte de couvert (sécheresse, saisonnalité) peuvent être interprétées comme une perte forestière par l'algorithme, alors que ce ne sont pas des forêts selon la référence
+
+*** 5. 📡 Saturation / bruit radiométrique du signal
+- Dans les zones de *forêt dégradée ou fragmentée*, le signal satellite est bruité → des variations naturelles du couvert sont interprétées à tort comme une *perte*
+
+---
+
+*** En résumé
+
+> La carte *sur-détecte des pertes* dans des zones qui n'étaient *pas réellement de la forêt* selon la référence, soit parce que le seuil de définition est différent, soit parce que des surfaces non-forestières produisent un signal similaire à une déforestation.
+
+Cette confusion *commission* (fausse alarme de loss) est particulièrement pénalisante pour l'estimation des taux de déforestation car elle *surestime les pertes*.
+
+*** Oui, mais d'un autre côté, les pertes sont sous-estimées car une partie des loss observés sont classés par le carte en stable non-forêt ?
+
+Tout à fait ! Vous pointez l'aspect *omission*, qui est symétrique et tout aussi important.
+
+---
+
+*/ Les deux types d'erreurs coexistent
+
+| Erreur | Ce qu'on observe dans la matrice | Effet |
+|--------|----------------------------------|-------|
+| *Commission* (fausse alarme) | La carte dit /loss/, la référence dit /stableNF/ | Surestime les pertes |
+| *Omission* (manque) | La carte dit /stableNF/, la référence dit /loss/ | *Sous-estime les pertes* |
+
+---
+
+*/ Pourquoi la carte classerait-elle en stableNF une vraie perte ?
+
+- La zone était déjà /dégradée avant/ la période d'analyse → elle ne franchit jamais le seuil de couvert pour être considérée comme forêt, donc sa disparition n'est pas comptabilisée comme une perte
+- Des pertes /très rapides/ (brûlis, coupe rase) peuvent saturer le signal et être confondues avec une zone durablement non-forestière
+- Des forêts /peu denses/ (forêts sèches, forêts dégradées) ont un signal radiométrique proche de stableNF même quand elles disparaissent
+
+---
+
+*/ La conséquence importante
+
+Ces deux erreurs *ne se compensent pas nécessairement*, et c'est tout l'intérêt de la matrice de confusion :
+
+> Il faut appliquer un *estimateur non-biaisé* (type Olofsson et al. 2014) qui utilise précisément ces proportions de confusion pour corriger l'aire estimée de chaque classe, en tenant compte des deux sources d'erreur simultanément.
+
+C'est d'ailleurs probablement l'objectif de votre analyse ! 😊
+
+***
+
+Est-ce que ces résultats sont normaux pour la carte de tropical moist forest ?
+
+Bonne question ! Laissez-moi regarder les chiffres TMF de plus près.
+
+---
+
+// Ce qui interpelle dans TMF
+
+*/ Période 1 - TMF
+| Référence → | gain | loss | stableF | stableNF |
+|-------------+------+------+---------+----------|
+| /Carte ↓/   |      |      |         |          |
+| gain        |   38 |    8 |      50 |       37 |
+| loss        |  173 |  228 |     270 |      380 |
+| stableF     |  243 |  113 |     713 |      368 |
+| stableNF    |  650 |  755 |     825 |     3979 |
+
+*/ Période 2 - TMF
+| Référence → | gain | loss | stableF | stableNF |
+|-------------+------+------+---------+----------|
+| /Carte ↓/   |      |      |         |          |
+| gain        |  153 |   30 |      71 |      216 |
+| loss        |   49 |  385 |     186 |      501 |
+| stableF     |  272 |  177 |     728 |      370 |
+| stableNF    |  297 |  535 |     442 |     3010 |
+
+---
+
+// Les anomalies flagrantes
+
+*/ 1. 🚨 La classe « gain » est très mauvaise en P1
+- Seulement /38 vrais gains/ détectés correctement
+- Mais /650 pixels classés gain par TMF sont en réalité stableNF/ → énorme taux de commission
+- C'est anormal : TMF /invente des gains/ là où il n'y en a pas
+
+*/ 2. 🚨 La classe « loss » en P1 est dominée par stableNF
+- 380 loss → stableNF (omission) et 755 stableNF → loss (commission)
+- La confusion est /bidirectionnelle et massive/
+
+*/ 3. 📈 P2 est nettement meilleure que P1
+- Les diagonales sont plus fortes en P2
+- TMF semble mieux performant sur la période la plus récente
+
+---
+
+// Explication possible
+
+> TMF est conçu pour les /forêts tropicales humides denses/, avec une définition et un algorithme très différents de GFC. En P1 (période plus ancienne), la qualité des images Landsat est moindre, et TMF pourrait souffrir de /problèmes de nuages ou de données manquantes/, générant des artefacts notamment sur la classe gain.
+
+Avez-vous des informations sur les années exactes couvertes par P1 et P2 ?
+
+*** P1=2000--2008 et P2=2008--2021. On sait que le gain est mauvais mais pour la prédiction des pertes ?
+
+Bonne précision ! Concentrons-nous sur la classe *loss* uniquement pour TMF.
+
+---
+
+// Loss TMF - P1 (2000-2008)
+
+| Référence → | gain | loss | stableF | stableNF | Total carte |
+|-------------+------+------+---------+----------+-------------|
+| loss        |  173 |  228 |     270 |      380 |        1051 |
+
+- /Précision utilisateur (commission)/ : 228/1051 = *22%* 🚨
+- /Rappel (omission)/ : 228/(228+755) ... non, colonne loss référence = 8+228+113+755 = *1104*
+- /Précision producteur/ : 228/1104 = *21%* 🚨
+
+---
+
+// Loss TMF - P2 (2008-2021)
+
+| Référence → | gain | loss | stableF | stableNF | Total carte |
+|-------------+------+------+---------+----------+-------------|
+| loss        |   49 |  385 |     186 |      501 | 1121        |
+
+- /Précision utilisateur/ : 385/1121 = *34%* 🚨
+- Total référence loss = 30+385+177+535 = *1127*
+- /Précision producteur/ : 385/1127 = *34%* 🚨
+
+---
+
+// Conclusion
+
+> Les performances de TMF sur la classe loss sont *franchement mauvaises en P1* et restent *médiocres en P2*, bien qu'en nette amélioration.
+
+Ce résultat est-il surprenant ? Pas totalement :
+- TMF est optimisé pour détecter l'état forestier, pas spécifiquement les *transitions*
+- P1 couvre une période ancienne (2000-2008) où la *résolution temporelle* des images disponibles était faible, rendant la détection des perturbations difficile
+- La confusion massive avec *stableNF* suggère que TMF a du mal à distinguer une *forêt dégradée* d'une perte réelle sur cette époque
+
+*** Et si ça provenait de la photo-interprétation?
+
+Excellente piste ! En effet, la photo-interprétation de la référence terrain peut être une source majeure d'erreur, /surtout pour P1/.
+
+---
+
+// Problèmes liés à la photo-interprétation en P1 (2000-2008)
+
+// 1. 📷 Qualité des images de référence
+- Les images disponibles pour 2000-2008 sont de /moins bonne résolution/ (Landsat 30m, peu d'images HR disponibles)
+- Les photo-interprètes ont pu avoir du mal à distinguer une /perte réelle/ d'une zone /durablement non-forestière/
+- → Des loss réels classés en /stableNF/ par erreur
+
+// 2. ☁️ Couverture nuageuse
+- Sur P1, moins d'images disponibles pour faire une /interprétation temporelle robuste/
+- Un interprète voyant une zone non-forestière /avant et après/ sans image intermédiaire claire pourrait la classer /stableNF/ plutôt que loss
+
+// 3. 🕐 Problème de datation de la transition
+- Une perte survenue /exactement autour de 2008/ peut être attribuée à P1 ou P2 selon l'interprète
+- Cela crée une /inconsistance/ entre la référence et la carte
+
+---
+
+// Conséquence importante
+
+> Si la référence elle-même est biaisée en P1, alors les /métriques de validation sont peu fiables/ pour cette période, et on ne peut pas conclure que TMF est mauvais : c'est peut-être la *référence qui est en cause*.
+
+C'est un argument pour /relativiser les mauvaises performances de P1/ par rapport à P2 ! 🎯
+
+*** On a en fait trois photo-interpréteurs et des confusions sur la réference d'environ 20% sur le statut forêt/non-forêt à une date.
+
+Ah, voilà qui est très éclairant ! 20% de désaccord entre photo-interpréteurs, c'est considérable et cela change l'interprétation des résultats.
+
+---
+
+// Ce que implique 20% de confusion inter-interpréteurs
+
+// 1. 🎯 Remise en perspective des performances de TMF
+- TMF affiche ~34% d'erreur sur loss en P2
+- Mais si la /référence elle-même a 20% d'incertitude/ sur le statut forêt/non-forêt...
+- La marge d'erreur "réelle" de TMF est beaucoup plus difficile à estimer
+- On ne peut pas condamner TMF sur la base d'une référence aussi incertaine
+
+// 2. 🔄 Effet cascade sur les classes de transition
+- Si le statut forêt/non-forêt à /une date/ est incertain à 20%...
+- Les classes de /transition/ (loss, gain) combinent l'incertitude de /deux dates/
+- L'erreur sur les transitions pourrait donc atteindre théoriquement /~36%/ (1 - 0.8²)
+- Ce qui expliquerait à lui seul une grande partie des confusions observées !
+
+// 3. 📊 Conséquence méthodologique
+> La précision de la référence constitue un /plafond de verre/ pour la validation : on ne peut pas espérer valider une carte avec une précision supérieure à celle de la référence elle-même.
+
+---
+
+// Conclusion générale
+
+> Les mauvaises performances de TMF (et dans une moindre mesure GFC) sur les classes de transition sont /probablement co-produites/ par la carte ET par la référence. Il faudrait idéalement disposer d'une mesure de l'*accord inter-interpréteurs spécifique aux transitions/ pour démêler les deux sources d'erreur. 🎯
+
+Est-ce normal d'avoir ces valeurs de spécificités:
+
+> df_acc
+  periods   maps   sen_gain  spe_gain  sen_loss  spe_loss
+1      p1 gfc_60 0.00000000 1.0000000 0.3360507 0.9413668
+2      p2 gfc_60 0.00000000 1.0000000 0.2307010 0.9254964
+3      p1    tmf 0.03442029 0.9877039 0.2065217 0.8934766
+4      p2    tmf 0.19844358 0.9523380 0.3416149 0.8830818
+
+
+** Analyse des spécificités et sensibilités
+
+Ces valeurs sont *cohérentes* avec les matrices de confusion, mais méritent d'être interprétées avec soin.
+
+---
+
+*** Ce qui est normal ✅
+
+*Spécificité élevée pour loss (~0.88–0.94)*
+- La majorité des pixels sont =stableNF= ou =stableF= → la carte a beaucoup de "vrais négatifs" facilement
+- Une haute spécificité sur une classe rare est *mécaniquement attendue* (paradoxe des classes déséquilibrées)
+
+*Sensibilité gain = 0 pour GFC*
+- Cohérent avec la matrice : GFC ne détecte *aucun gain* (la diagonale gain est à 0)
+- GFC n'est pas conçu pour cartographier les gains → normal
+
+---
+
+*** Ce qui interpelle ⚠️
+
+*La spécificité de loss pour TMF est plus basse (~0.88–0.89) que GFC (~0.93–0.94)*
+
+> Cela signifie que TMF génère *plus de fausses alarmes* sur loss que GFC, ce qui est cohérent avec la confusion massive =loss → stableNF= observée dans les matrices.
+
+*La sensibilité de loss reste faible partout (0.21–0.34)*
+
+> Aucune carte ne détecte bien les pertes réelles. Mais rappelons que si la référence a ~20% d'incertitude sur les transitions (cf. désaccord inter-interpréteurs), une sensibilité "plafond" attendue serait déjà ~0.64–0.80 au maximum théorique — ce qui relativise ces chiffres.
+
+---
+
+*** Tableau récapitulatif interprété
+
+| Carte | Période | Diagnostic loss |
+|-------|---------|----------------|
+| GFC | P1 | Peu de fausses alarmes, mais rate 2/3 des pertes |
+| GFC | P2 | Similaire, légèrement dégradé |
+| TMF | P1 | Rate 80% des pertes *et* génère plus de fausses alarmes |
+| TMF | P2 | Meilleure sensibilité mais spécificité encore faible |
+
+---
+
+*** Conclusion
+
+> Ces valeurs sont *normales au sens où elles sont explicables*, mais elles confirment que *ni GFC ni TMF ne sont de bons détecteurs de perte* au niveau pixel — ce qui est un résultat classique dans la littérature, et qui justifie précisément le recours à l'*estimateur Olofsson* pour corriger les biais plutôt que de prendre les aires cartographiées au pied de la lettre.
+

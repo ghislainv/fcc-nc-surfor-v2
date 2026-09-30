@@ -6,12 +6,158 @@ library(here)
 library(caret)  # Confusion matrices
 library(ggplot2)
 library(sf)
+library(tidyr)
 
 # Output directory
 dir.create(here("outputs"))
 
 # Load data
 df <- read_csv(here("data", "df_surfor_gee.csv"), show_col_types=FALSE)
+
+# ========================================================
+# Disagreement between interpreters
+# ========================================================
+
+# Formatting data
+# ---------------
+
+# Variables to keep
+keep_var <- c("plotid", "sampleid", "email", "dataset", "Classification")
+
+# Load datasets for change
+file_2000 <- "38354-samples_2000.csv"
+file_2008 <- "38356-samples_2010.csv"
+file_2021 <- "38355-samples_2021.csv"
+df_2000 <- read_csv(here("data_raw", file_2000), show_col_types=FALSE) |>
+  mutate(dataset="for2000") |>
+  select(keep_var)
+df_2008 <- read_csv(here("data_raw", file_2008), show_col_types=FALSE) |>
+  mutate(dataset="for2008") |>
+  select(keep_var)
+df_2021 <- read_csv(here("data_raw", file_2021), show_col_types=FALSE) |>
+  mutate(dataset="for2021") |>
+  select(keep_var)
+
+# Load dataset for forest cover 2021
+file_for2021 <- "raster-intersect_ceo-38675-samples_F-NF-2021.csv"
+df_for2021 <- read_csv(here("data_raw", file_for2021), show_col_types=FALSE) |>
+  mutate(dataset="for2021_fnf") |>
+  select(keep_var)
+
+# Combine data-sets
+df_disag <- df_2000 |>
+  bind_rows(df_2008) |>
+  bind_rows(df_2021) |>
+  bind_rows(df_for2021) |>
+  mutate(Classification=ifelse(Classification %in% c("Indéterminé", "Non interprétable"), "NotInt", Classification))
+
+# Wide data
+data_wide <- df_disag |>
+  mutate(Classification = case_when(
+    Classification == "Forêt"     ~ 1,
+    Classification == "Non Forêt" ~ 2,
+    Classification == "NotInt"    ~ 3
+  )) |>
+  pivot_wider(
+    id_cols     = c(plotid, sampleid, dataset),
+    names_from  = email,
+    values_from = Classification
+  )
+
+# Raw disagreement per dataset
+# ----------------------------
+datasets <- sort(unique(data_wide$dataset))
+n_datasets <- length(datasets)
+raw_disag <- data.frame(
+  dataset=datasets)
+ff1 <- function(row){ifelse(sum(is.na(row)) < 2, 1, 0)}
+ff2 <- function(row){length(unique(row[!is.na(row)])) != 1}
+for (i in 1:n_datasets) {
+  df <- data_wide[data_wide$dataset==datasets[i], 4:6]
+  raw_disag[i, "n_pix"] <- nrow(df)
+  raw_disag[i, "n_pix_rep"] <- sum(apply(df, 1, ff1))
+  raw_disag[i, "n_disag"] <- sum(apply(df, 1, ff2))
+}
+raw_disag[n_datasets + 1, 2:4] <- apply(raw_disag[, 2:4], 2, sum)
+raw_disag[n_datasets + 1, 1] <- "All combined"
+raw_disag$perc_rep <- round(100 * (raw_disag$n_pix_rep / raw_disag$n_pix), 1)
+raw_disag$perc_disag <- round(100 * (raw_disag$n_disag / raw_disag$n_pix_rep), 1)
+raw_disag$n_plots <- raw_disag$n_pix / 9
+raw_disag <- raw_disag |>
+  relocate(n_plots, .before=n_pix) |>
+  relocate(perc_rep, .before=n_disag)
+
+# Krippendorff's Alpha
+# --------------------
+get_alpha <- function(data_wide, dataset_names) {
+  # --- Prepare the matrix of interpreters only ---
+  mat <- data_wide |>
+    filter(dataset %in% dataset_names) |>
+    select(-plotid, -sampleid, -dataset) |>
+    as.matrix()
+
+  # --- Observed disagreement (D_o) ---
+  # For each pixel, count the disagreeing pairs
+  do_pixel <- apply(mat, 1, function(row) {
+    vals <- na.omit(row)
+    n <- length(vals)
+    if (n < 2) return(NA)
+    # Number of disagreeing pairs over total pairs
+    paires_desaccord <- sum(outer(vals, vals, "!=")) / 2
+    paires_total     <- n * (n - 1) / 2
+    paires_desaccord / paires_total
+  })
+  D_o <- mean(do_pixel, na.rm = TRUE)
+
+  # --- Expected disagreement by chance (D_e) ---
+  # Frequency of each class across all annotations
+  toutes_vals <- na.omit(as.vector(mat))
+  n_total     <- length(toutes_vals)
+  freq        <- table(toutes_vals) / n_total
+
+  # D_e = 1 - sum(freq_k^2)
+  # [probability that 2 randomly drawn annotations differ]
+  D_e <- 1 - sum(freq^2)
+
+  # --- Alpha ---
+  alpha <- 1 - (D_o / D_e)
+  return(list(D_o=round(100 * D_o,  1),
+              D_e=round(100 * D_e,  1),
+              alpha=round(100 * alpha, 1)))
+}
+
+# Loop
+df_alpha <- data.frame(dataset=c(datasets, "All combined"))
+for (i in 1:n_datasets) {
+  K_alpha <- get_alpha(data_wide, datasets[i])
+  df_alpha[i, "D_o"] <- K_alpha$D_o
+  df_alpha[i, "D_e"] <- K_alpha$D_e
+  df_alpha[i, "K_alpha"] <- K_alpha$alpha
+}
+K_alpha <- get_alpha(data_wide, datasets)
+df_alpha[n_datasets + 1, 2:4] <- K_alpha
+
+# Combine raw disagreement and alpha
+df_disag_interpreters <- raw_disag |>
+  left_join(df_alpha, by="dataset") |>
+  write_csv(here("outputs", "df_disag_interp.csv"))
+
+# Bad interpreter
+# ---------------
+# Removing interpreter one by one to see how K_alpha increases
+
+K_alpha_full <- df_alpha$K_alpha[df_alpha$dataset=="All combined"]
+df_bad <- data.frame(removed=c("S", "A", "O"))
+for (i in 1:3) {
+  dw <- data_wide |>
+    select(-c(3 + i))
+  K_alpha <- get_alpha(dw, datasets)
+  df_bad[i, "alpha"] <- K_alpha$alpha
+  K_change <- K_alpha$alpha - K_alpha_full
+  df_bad[i, "alpha_change"] <- K_change
+}
+df_bad |>
+  write_csv(here("outputs", "df_bad_interpreter.csv"))
 
 # ========================================================
 # Best percentage of tree cover for GFC based on year 2021
@@ -213,49 +359,50 @@ df_fcc <- df_fcc |>
                                 for2021_pred_tmf=="NonForest", "stableNF", fcc_p2_tmf))
 
 # Variables
-status <- c("loss", "gain", "stableF", "stableNF")
-n_status <- length(status)
 periods <- c("p1", "p2")
 n_periods <- length(periods)
 maps <- c("gfc_60", "tmf")
 n_maps <- length(maps)
+fcc_classes <- c("gain", "loss", "stableF", "stableNF")
 
 # Data-frame to store results
-df_res <- data.frame(
+df_freq <- data.frame()
+df_acc <- data.frame(
   periods=rep(periods, n_maps),
   maps=rep(maps, each=n_periods),
-  00=NA, 01=NA, nfnf=NA, nff=NA, n_f=NA, n_nf=NA,
-  oa=NA, sen=NA, spe=NA, kappa=NA)
+  sen_gain=NA, spe_gain=NA,
+  sen_loss=NA, spe_loss=NA)
 
 # Loops
 for (i in 1:n_maps) {
   for (j in 1:n_periods) {
-    for (k in 1:n_status) {
+    # Confusion matrix
     cmat <- df_fcc |>
-      mutate(obs=as.factor(.data[[paste0("fcc_", periods[j])]])) |>
-      mutate(pred=as.factor(.data[[paste0("fcc_", periods[j], "_", maps[i])]])) |>
+      mutate(obs=factor(.data[[paste0("fcc_", periods[j])]], levels=fcc_classes)) |>
+      mutate(pred=factor(.data[[paste0("fcc_", periods[j], "_", maps[i])]], levels=fcc_classes)) |>
       select(obs, pred) |>
       na.omit()
     conf_mat <- caret::confusionMatrix(
       data=cmat$pred,
       reference=cmat$obs)
-    w <- which(df_res$periods==periods[j] & df_res$maps==maps[i])
-    df_res$oa[w] <- conf_mat$overall["Accuracy"]
-    df_res$kappa[w] <- conf_mat$overall["Kappa"]
-    df_res$sen[w] <- conf_mat$byClass["Sensitivity"]
-    df_res$spe[w] <- conf_mat$byClass["Specificity"]
-    ## df_res$ff[w] <- conf_mat$table[1, 1]
-    ## df_res$fnf[w] <- conf_mat$table[2, 1]
-    ## df_res$nff[w] <- conf_mat$table[1, 2]
-    ## df_res$nfnf[w] <- conf_mat$table[2, 2]
+    # Frequencies
+    tab <- data.frame(as.matrix(conf_mat))
+    tab$map <- maps[i]
+    tab$period <- periods[j]
+    df_freq <- df_freq |> bind_rows(tab)
+    # Accuracy indices
+    w <- which(df_acc$periods==periods[j] & df_acc$maps==maps[i])
+    df_acc$sen_gain[w] <- conf_mat$byClass["Class: gain", "Sensitivity"]
+    df_acc$spe_gain[w] <- conf_mat$byClass["Class: gain", "Specificity"]
+    df_acc$sen_loss[w] <- conf_mat$byClass["Class: loss", "Sensitivity"]
+    df_acc$spe_loss[w] <- conf_mat$byClass["Class: loss", "Specificity"]
   }
 }
 
 # Save
-df_res <- df_res |>
-  mutate(n_f = ff + fnf, n_nf = nfnf + nff) |>
-  mutate(across(c(oa, sen, spe, kappa), ~ round(.x, 3))) |>
-  arrange(years) |>
-  write_csv(here("outputs", "conf_mat_forest_cover_2000_2008_2021.csv"))
+df_freq |> write_csv(here("outputs", "conf_mat_fcc.csv"))
+df_acc <- df_acc |>
+  mutate(across(c("sen_gain", "spe_gain", "sen_loss", "spe_loss"), ~ round(.x, 3))) |>
+  write_csv(here("outputs", "accurracy_fcc.csv"))
 
 

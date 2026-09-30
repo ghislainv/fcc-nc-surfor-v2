@@ -1,0 +1,358 @@
+*** Confusion Matrix and Statistics
+
+          Reference
+Prediction gain loss stableF stableNF
+  gain      153   30      71      216
+  loss       49  385     186      501
+  stableF   272  177     728      370
+  stableNF  297  535     442     3010
+
+Overall Statistics
+                                          
+               Accuracy : 0.5761          
+                 95% CI : (0.5648, 0.5874)
+    No Information Rate : 0.552           
+    P-Value [Acc > NIR] : 1.497e-05       
+                                          
+                  Kappa : 0.3072          
+                                          
+ Mcnemar's Test P-Value : < 2.2e-16       
+
+Statistics by Class:
+
+                     Class: gain Class: loss Class: stableF Class: stableNF
+Sensitivity              0.19844     0.34161        0.51016          0.7347
+Specificity              0.95234     0.88308        0.86339          0.6168
+Pos Pred Value           0.32553     0.34344        0.47059          0.7026
+Neg Pred Value           0.91110     0.88224        0.88102          0.6536
+Prevalence               0.10388     0.15185        0.19227          0.5520
+Detection Rate           0.02061     0.05187        0.09809          0.4056
+Detection Prevalence     0.06333     0.15104        0.20843          0.5772
+Balanced Accuracy        0.57539     0.61235        0.68677          0.6758
+
+Que dire de ces résultats pour le suivi de la déforestation comparant observations issues e la photo-interprétation et prédictions obtenues par une carte ?
+
+* Analyse des résultats de la matrice de confusion pour le suivi de la déforestation
+
+** 1. Performance globale — Médiocre à modérée
+
+| Métrique | Valeur | Interprétation |
+|----------|--------|----------------|
+| Accuracy | 57,6% | Légèrement au-dessus du hasard pondéré (NIR = 55,2%) |
+| Kappa | 0,307 | Accord *faible à modéré* (seuil acceptable ~0,4–0,6) |
+| p-value Mcnemar | < 2.2e-16 | Biais systématique significatif entre carte et photo-interprétation |
+
+> ⚠️ Le gain réel par rapport à une classification naïve (NIR) est *très limité*.
+
+---
+
+** 2. Performances par classe — Très contrastées
+
+*** 🔴 =gain= — Très mauvaise détection
+- *Sensibilité : 19,8%* → la carte *rate 80% des gains réels*
+- Spécificité élevée (95,2%) : les non-gains sont bien exclus
+- *Sous-détection massive* : 297+272+49 = 618 gains réels classés ailleurs (surtout =stableNF= et =stableF=)
+- /Problème critique/ pour la détection de la déforestation naissante
+
+*** 🟠 =loss= — Détection insuffisante
+- *Sensibilité : 34,2%* → *66% des pertes forestières sont manquées*
+- C'est la classe la plus critique pour la déforestation
+- 535 pertes réelles classées en =stableNF= → confusion majeure
+- /Inacceptable/ pour un outil de surveillance opérationnel
+
+*** 🟡 =stableF= — Performance moyenne
+- Sensibilité : 51% / Spécificité : 86,3%
+- Balanced Accuracy : 68,7% — la meilleure des 4 classes
+- Confusion importante avec =stableNF= (370 cas) et =gain= (272 cas)
+
+*** 🟢 =stableNF= — Classe dominante, bien détectée
+- *Sensibilité : 73,5%* — la meilleure, mais *portée par la prévalence élevée (55,2%)*
+- Spécificité faible (61,7%) : beaucoup de faux positifs =stableNF=
+- La carte a tendance à *sur-prédire cette classe* (57,7% des prédictions)
+
+---
+
+** 3. Biais systématiques identifiés
+
+#+begin_src 
+Tendance générale : la carte prédit trop de "stableNF"
+et sous-estime fortement les dynamiques (gain, loss)
+#+end_src
+
+| Biais | Ampleur |
+|-------|---------|
+| Sous-détection du =gain= | 216 vrais gains → stableNF |
+| Sous-détection de la =loss= | 535 vraies pertes → stableNF |
+| Confusion =stableF= ↔ =stableNF= | 442 + 370 cas croisés |
+
+---
+
+** 4. Implications pour le suivi de la déforestation
+
+*** ❌ Limites majeures
+- La carte *ne détecte qu'1 perte réelle sur 3* → sous-estimation structurelle de la déforestation
+- Le gain de forêt est quasi invisible dans la carte
+- Le *Kappa de 0,31* indique que la carte ne peut pas se substituer à la photo-interprétation
+
+*** ✅ Points positifs relatifs
+- Bonne identification des zones stables (non-forêt surtout)
+- Utilisable comme *pré-screening* pour cibler les zones d'investigation terrain
+- La significativité statistique (p < 1.5e-05 vs NIR) confirme un signal réel, même faible
+
+*** 💡 Recommandations
+1. *Recalibrer le classificateur* en faveur des classes minoritaires (=gain=, =loss=) — rééchantillonnage ou pondération des coûts
+2. Investiguer les *confusions =loss= → =stableNF=* : problème de date d'image ? de seuil spectral ?
+3. Envisager une *approche hiérarchique* : forêt/non-forêt d'abord, puis dynamiques
+4. Utiliser la carte en *combinaison* avec la photo-interprétation, non en remplacement
+
+*** Si j'ai une overall accuracy de 80% pour une classification forêt/non-forêt, à combien puis-je m'attendre pour une classification du changement entre deux dates (perte, gain, ou stable) ?
+
+Excellente question — il y a une règle mathématique intuitive qui s'applique ici.
+
+---
+
+** Principe : la précision du changement se dégrade en cascade
+
+Détecter un *changement* nécessite d'avoir *deux classifications correctes simultanément*. Si les erreurs sont indépendantes entre les deux dates :
+
+$$P(\text{changement correct}) = P(\text{date 1 correct}) \times P(\text{date 2 correct})$$
+
+---
+
+** Application numérique
+
+| Scénario | Calcul | Précision attendue |
+|----------|--------|--------------------|
+| OA date 1 seule | — | *80%* |
+| OA date 2 seule | — | *80%* |
+| Changement (indépendance) | 0,80 × 0,80 | *~64%* |
+| Changement (optimiste, erreurs corrélées) | > 0,64 | *64–75%* |
+
+> 📌 Vos *57,6%* observés sont donc /cohérents/ avec cette attente théorique, voire légèrement en dessous — ce qui suggère des *erreurs corrélées négativement* ou des difficultés spécifiques à certaines transitions.
+
+---
+
+** Pourquoi c'est souvent pire que 64% ?
+
+#+begin_src 
+Erreurs non indépendantes entre dates
+        │
+        ├── Même pixel mal classé aux deux dates → stable apparent
+        │   (ex: loss réelle classée nonForêt/nonForêt = "stableNF")
+        │
+        ├── Classes de changement rares → déséquilibre fort
+        │   (gain/loss << stable dans la réalité)
+        │
+        └── Effets phénologiques, nuages, corrections atmosphériques
+            différents entre les deux dates
+#+end_src
+
+---
+
+** Illustration avec vos données
+
+| Ce qu'on voulait détecter | Ce que la carte dit | Cause probable |
+|--------------------------|--------------------|--------------------|
+| =loss= réelle (forêt → non-forêt) | =stableNF= | Pixel déjà mal classé en date 1 |
+| =gain= réel (non-forêt → forêt) | =stableF= ou =stableNF= | Pixel mal classé en date 2 |
+
+---
+
+** Règle pratique à retenir
+
+> 💡 Pour une classification du changement fiable, il faut viser *~90% d'OA par date* pour espérer *~80% sur le changement*, ce qui reste un objectif ambitieux en télédétection forestière.
+
+*** Quelles sont les valeurs d'accuracy pour TMF et GFC les deux produits globaux de changements de couvert forestier ?
+
+Honnêtement, je dois être prudent ici — je *ne veux pas vous donner des chiffres incorrects* de mémoire, car :
+
+1. Les valeurs rapportées varient *selon les études de validation*, les zones géographiques, les périodes et les définitions de "forêt" utilisées
+2. Ces produits ont fait l'objet de *nombreuses publications* avec des résultats parfois contradictoires
+3. Je pourrais confondre des chiffres entre études
+
+---
+
+* Ce que je peux vous dire avec confiance
+
+| Produit | Source | Résolution |
+|---------|--------|------------|
+| *GFC* — Global Forest Change | Hansen et al., /Science/, 2013 | 30 m (Landsat) |
+| *TMF* — Tropical Moist Forest | Vancutsem et al., /Science Advances/, 2021 | 30 m (Landsat) |
+
+---
+
+* Ce que je vous recommande
+
+Les références de validation les plus rigoureuses sont :
+
+- Les *études comparatives* publiées dans /Remote Sensing of Environment/ ou /Global Change Biology/
+- Le projet *GLAD* (UMD) pour GFC
+- Les validations de *Vancutsem et al. 2021* pour TMF directement dans l'article fondateur
+
+---
+
+> 💡 Avez-vous accès à des études de validation spécifiques à votre région ? Les performances varient énormément entre *forêt tropicale dense*, *forêt sèche* et *zones de transition*, ce qui serait plus pertinent que des chiffres globaux.
+
+*** En forêt tropicale humide ?
+
+Même réponse honnête : je *ne suis pas suffisamment certain* des chiffres précis pour vous les donner avec confiance, même en restreignant à la forêt tropicale humide.
+
+---
+
+- Ce dont je me souviens vaguement (⚠️ à vérifier)
+
+- Les validations en forêt tropicale humide donnent généralement de *meilleures performances* qu'ailleurs pour la /déforestation franche/ (contraste fort forêt/non-forêt)
+- Mais des *performances dégradées* pour :
+  - La dégradation forestière
+  - Les forêts secondaires / repousse
+  - Les zones nuageuses (Amazonie occidentale, Congo, Asie du Sud-Est)
+
+---
+
+- Références à consulter directement
+
+| Référence | Pourquoi pertinente |
+|-----------|-------------------|
+| Turubanova et al. (2018), /Environ. Res. Lett./ | Validation GFC tropiques |
+| Vancutsem et al. (2021), /Science Advances/ | Validation TMF intégrée |
+| Palahi et al. / études FAO-JRC | Comparaisons multi-produits |
+| *Tropical Moist Forest validation dataset* (JRC) | Référence terrain spécifique |
+
+---
+
+> 💡 Si vous avez accès à ces articles, je peux vous aider à *interpréter et comparer* les tableaux de validation — c'est là que je peux vous apporter une vraie valeur ajoutée.
+
+*** Si le gain et le loss sont de l'ordre de 0.5% à quoi peut-on s'attendre sur l'acuracy ?
+
+Excellente question — c'est le problème du *déséquilibre des classes*, et il a un effet mathématique direct sur l'accuracy.
+
+---
+
+* Raisonnement par le NIR (No Information Rate)
+
+Si un classifieur prédit /toujours "stable"/ :
+
+| Classe | Prévalence | Contribution à l'accuracy |
+|--------|-----------|--------------------------|
+| stableNF | ~49% | 49% |
+| stableF | ~49% | 49% |
+| gain | ~0,5% | 0% |
+| loss | ~0,5% | 0% |
+| *NIR "naïf"* | | *~98%* |
+
+> 📌 Un modèle qui /ignore complètement/ la déforestation affiche *~98% d'accuracy* !
+
+---
+
+* Ce que cela implique
+
+$$\text{OA} = 98\%\ \text{sans détecter un seul changement}$$
+
+L'accuracy devient donc *totalement non informative* pour évaluer la détection du changement.
+
+---
+
+* Les métriques à privilégier dans ce cas
+
+| Métrique | Pourquoi pertinente |
+|----------|-------------------|
+| *Sensibilité* (recall) par classe | Détecte-t-on les vrais changements ? |
+| *F1-score* par classe | Équilibre précision/rappel sur les classes rares |
+| *Kappa de Cohen* | Corrige le hasard mais reste limité |
+| *Balanced Accuracy* | Moyenne des sensibilités par classe |
+| *TSS* (True Skill Statistic) | Indépendant de la prévalence |
+| *AUC-ROC* par classe | Si scores de probabilité disponibles |
+
+---
+
+* Mise en perspective avec vos résultats
+
+> Vos ~57% d'OA avec gain/loss à ~10-15% de prévalence étaient déjà peu informatifs. Avec /0,5% de prévalence/, l'OA devient *trompeuse par construction* — seules les métriques par classe (sensibilité, F1) ont du sens.
+
+---
+
+* Règle pratique
+
+> 💡 En suivi de la déforestation à l'échelle globale/nationale, *ne jamais rapporter l'OA seule*. La sensibilité sur la classe /loss/ est la métrique clé opérationnelle — et elle est souvent de l'ordre de *20–50%* même pour les meilleurs produits globaux.
+
+*** Dans mon cas, elle est de combien ?
+
+D'après votre matrice de confusion initiale :
+
+---
+
+- Sensibilité pour la classe =loss=
+
+$$\text{Sensibilité}_{loss} = \frac{VP_{loss}}{VP_{loss} + FN_{loss}} = \frac{385}{385 + 30 + 186 + 501} = \frac{385}{1127} \approx \textbf{34,2\%}$$
+
+---
+
+> 📌 Votre carte ne détecte qu'*1 perte forestière réelle sur 3/, les 2/3 restants étant principalement absorbés par la classe =stableNF= (501 cas).
+
+---
+
+Ce chiffre est d'autant plus préoccupant que dans votre cas la prévalence de =loss= est de *~15%* — bien plus élevée que les 0,5% d'un produit global. Avec une prévalence aussi faible, la sensibilité ne peut qu'être /encore plus basse/ pour un produit global équivalent.
+
+*** Si jamais l'OA est de 70%, on tombe à 49% max pour le changement
+
+Oui, exactement — c'est la logique de la multiplication des probabilités :
+
+$$0.70 \times 0.70 = 0.49$$
+
+---
+
+- Et dans la réalité c'est encore pire
+
+Car comme on l'a vu, avec des classes de changement à /0,5% de prévalence/ :
+
+| Étape | Valeur |
+|-------|--------|
+| OA par date | 70% |
+| OA théorique changement (indépendance) | ~49% |
+| NIR avec gain/loss à 0,5% | ~99% |
+| OA réelle changement | possiblement > 99%... |
+
+> 📌 Paradoxe : on peut avoir /99% d'OA sur le changement/ tout en ayant une /sensibilité proche de 0%/ sur les classes qui nous intéressent — la déforestation est invisible dans la carte mais l'accuracy est excellente.
+
+---
+
+- Conclusion générale
+
+> 💡 L'OA est une métrique /structurellement inadaptée/ au suivi de la déforestation. Rapporter une OA de 80% ou 99% pour un produit de changement forestier global est *potentiellement trompeur* sans la sensibilité sur la classe /loss/.
+
+*** Je voudrais savoir si les prédictions de la carte en terme de déforestation sont de vraies déforestation. Quelle métrique mettre en avant ?
+
+C'est la *valeur prédictive positive* (VPP), aussi appelée /Précision/ ou /User's Accuracy/ en télédétection.
+
+---
+
+- Définition
+
+$$\text{VPP}_{loss} = \frac{VP_{loss}}{VP_{loss} + FP_{loss}} = \frac{\text{vrais loss prédits loss}}{\text{tout ce qui est prédit loss}}$$
+
+> 📌 "Parmi les pixels que la carte appelle /loss/, combien sont vraiment de la déforestation ?"
+
+---
+
+- Dans vos données
+
+$$\text{VPP}_{loss} = \frac{385}{49 + 385 + 177 + 535} = \frac{385}{1146} \approx \textbf{33,6\%}$$
+
+---
+
+- Interprétation
+
+> ⚠️ /2 pixels sur 3 prédits comme déforestation ne le sont pas/ — majoritairement des =stableNF= et =stableF= confondus avec de la perte forestière.
+
+---
+
+- Récapitulatif des deux métriques clés
+
+| Question | Métrique | Valeur |
+|----------|----------|--------|
+| "Détecte-t-on la vraie déforestation ?" | Sensibilité (Producer's accuracy) | 34,2% |
+| "La déforestation prédite est-elle réelle ?" | VPP (User's accuracy) | 33,6% |
+
+> 💡 Les deux sont ici symétriquement mauvaises — la carte est à la fois /peu sensible/ et /peu fiable/ pour la classe =loss=.
+
+*** 

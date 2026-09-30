@@ -1,0 +1,4 @@
+source,year,tc,forest_area,perc,OA,Kappa
+amap,2015,,649331,39,,
+gfc,2015,60,714640,42,0.83,0.64
+tmf,2015,,675836,40,0.84,0.66

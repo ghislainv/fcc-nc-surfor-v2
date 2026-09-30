@@ -1,0 +1,594 @@
+*** J'ai des répétitions pour photo-interpréter des pixels forestiers ou non avec 3 photos-interprètes différents. Comme estimer un taux de désaccord ?
+
+Bonne question méthodologique ! Pour estimer un *taux de désaccord* entre plusieurs interprètes sur une classification binaire (forestier / non-forestier), plusieurs approches existent :
+
+---
+
+** 1. 📊 Taux de désaccord brut (simple)
+
+Pour chaque pixel, vérifier si les 3 interprètes sont unanimes ou non :
+
+#+begin_src 
+Taux de désaccord = Nbre de pixels avec au moins 1 désaccord / Nbre total de pixels
+#+end_src
+
+Simple, mais ne distingue pas les *degrés* de désaccord (1 contre 2 vs 3 avis différents).
+
+---
+
+** 2. 🎯 Kappa de Cohen (par paires)
+
+Comparer les interprètes *deux à deux* (3 paires : A/B, A/C, B/C) :
+
+#+begin_src 
+κ = (P_o - P_e) / (1 - P_e)
+#+end_src
+
+- *P_o* = accord observé
+- *P_e* = accord attendu par chance
+
+| κ | Interprétation |
+|---|---|
+| < 0.20 | Très faible |
+| 0.20–0.40 | Faible |
+| 0.40–0.60 | Modéré |
+| 0.60–0.80 | Bon |
+| > 0.80 | Très bon |
+
+---
+
+** 3. 🏆 Kappa de Fleiss (≥ 3 interprètes simultanément)
+
+C'est *l'extension naturelle* du Kappa de Cohen pour *k ≥ 3 évaluateurs* :
+
+#+begin_src 
+κ_Fleiss = (P̄ - P̄_e) / (1 - P̄_e)
+#+end_src
+
+Où P̄ est la proportion moyenne d'accord entre toutes les paires possibles. C'est probablement *la méthode la plus adaptée à votre cas*.
+
+---
+
+** 4. 📐 Krippendorff's Alpha
+
+Plus général que Fleiss, gère :
+- Les *données manquantes*
+- Différents types de variables (nominale, ordinale, etc.)
+
+Très robuste, recommandé si vos données sont incomplètes.
+
+---
+
+** 🔧 En pratique (R / Python)
+
+*R :*
+#+begin_src r
+library(irr)
+kappam.fleiss(data)   # Fleiss Kappa
+kripp.alpha(data)     # Krippendorff Alpha
+#+end_src
+
+*Python :*
+#+begin_src python
+from statsmodels.stats.inter_rater import fleiss_kappa
+# ou
+import krippendorff
+krippendorff.alpha(data)
+#+end_src
+
+---
+
+** ✅ Recommandation
+
+| Situation | Méthode conseillée |
+|---|---|
+| Vue d'ensemble rapide | Taux de désaccord brut |
+| Comparaison par paires | Kappa de Cohen |
+| *3 interprètes, données complètes* | *Kappa de Fleiss* ✅ |
+| Données manquantes | Krippendorff's Alpha |
+
+Avez-vous les données sous la main ? Je peux vous aider à structurer le calcul !
+
+*** Je n'ai pas toujours 3 personnes. Parfois, c'est deux...
+
+Krippendorff's Alpha est alors la solution idéale, car il gère nativement les *nombres d'évaluateurs variables* (2 ou 3 selon les pixels) ainsi que les données manquantes.
+
+---
+
+* 🏆 Krippendorff's Alpha — votre cas
+
+Imaginez votre tableau de données comme :
+
+| Pixel | Interprète A | Interprète B | Interprète C |
+|-------|-------------|-------------|-------------|
+| 1 | Forêt | Forêt | Forêt |
+| 2 | Forêt | Non-forêt | NA |
+| 3 | Non-forêt | Non-forêt | Non-forêt |
+| 4 | Forêt | NA | Non-forêt |
+
+Les =NA= sont gérés nativement — pas besoin de supprimer ces lignes.
+
+---
+
+* 🔧 En pratique
+
+/R :/
+#+begin_src r
+library(irr)
+
+data <- matrix(c(
+  1, 1, 1,
+  1, 0, NA,
+  0, 0, 0,
+  1, NA, 0
+), nrow = 4, byrow = TRUE)
+
+kripp.alpha(t(data), method = "nominal")
+#+end_src
+
+> ⚠️ Noter le =t()= : =irr= attend les /évaluateurs en lignes/ et les /pixels en colonnes/.
+
+/Python :/
+#+begin_src python
+import krippendorff
+import numpy as np
+
+data = np.array([
+    [1, 1, 1],
+    [1, 0, np.nan],
+    [0, 0, 0],
+    [1, np.nan, 0]
+])
+
+krippendorff.alpha(data.T, level_of_measurement="nominal")
+#+end_src
+
+---
+
+* ✅ Pourquoi pas Fleiss ici ?
+
+| Critère | Fleiss Kappa | Krippendorff Alpha |
+|---|---|---|
+| Nbre évaluateurs variable | ❌ | ✅ |
+| Données manquantes | ❌ | ✅ |
+| Variable nominale | ✅ | ✅ |
+
+Krippendorff est strictement plus général. C'est donc *la méthode à retenir pour votre cas* !
+
+*** J'ai des données avec les colonnes suivantes:
+
+[1] "plotid"         "sampleid"       "email"          "imagery_title" 
+[5] "Classification"
+
+Chaque pixel a un couple (plotid, sampleid) unique et l'email du photointerprète est donné.
+
+Comment calculer l'indice avec dplyr ?
+
+Voici comment préparer et calculer l'alpha de Krippendorff avec =dplyr= :
+
+---
+
+*1. 📐 Mise en forme (long → large)*
+
+#+begin_src r
+library(dplyr)
+library(tidyr)
+library(irr)
+
+data_wide <- data %>%
+  # Un interprète par colonne
+  pivot_wider(
+    id_cols     = c(plotid, sampleid),
+    names_from  = email,
+    values_from = Classification
+  )
+#+end_src
+
+---
+
+*2. 🎯 Calcul de l'alpha*
+
+#+begin_src r
+# Ne garder que les colonnes des interprètes (sans plotid et sampleid)
+mat <- data_wide %>%
+  select(-plotid, -sampleid) %>%
+  as.matrix()
+
+# Krippendorff attend évaluateurs en LIGNES, pixels en COLONNES
+kripp.alpha(t(mat), method = "nominal")
+#+end_src
+
+---
+
+*⚠️ Points d'attention*
+
+- Si =Classification= est un *facteur*, convertissez-le en numérique avant :
+#+begin_src r
+data <- data %>%
+  mutate(Classification = as.numeric(as.factor(Classification)))
+#+end_src
+
+- Si un interprète n'a *pas évalué* un pixel, il apparaîtra automatiquement en =NA= après le =pivot_wider= — c'est exactement ce qu'on veut pour Krippendorff ✅
+
+Vous pouvez me partager un exemple de vos valeurs de =Classification= pour affiner si besoin !
+
+Classification à les modalités suivantes:
+> sort(unique(df_disag$Classification))
+[1] "Forêt"     "Non Forêt" "NotInt"
+
+Il faut exclure les pixels classés ="NotInt"= (non interprétables) car ce ne sont pas de vrais désaccords, puis convertir en numérique :
+
+---
+
+#+begin_src r
+library(dplyr)
+library(tidyr)
+library(irr)
+
+data_wide <- df_disag %>%
+  # Exclure les "NotInt"
+  filter(Classification != "NotInt") %>%
+  # Convertir en numérique
+  mutate(Classification = case_when(
+    Classification == "Forêt"     ~ 1,
+    Classification == "Non Forêt" ~ 0
+  )) %>%
+  pivot_wider(
+    id_cols     = c(plotid, sampleid),
+    names_from  = email,
+    values_from = Classification
+  )
+
+# Calcul
+mat <- data_wide %>%
+  select(-plotid, -sampleid) %>%
+  as.matrix()
+
+kripp.alpha(t(mat), method = "nominal")
+#+end_src
+
+---
+
+/⚠️ Deux stratégies possibles pour "NotInt"/
+
+| Stratégie | Code | Interprétation |
+|---|---|---|
+| /Exclure la ligne entière/ | =filter(Classification != "NotInt")= | Le pixel est retiré de l'analyse ✅ |
+| /Traiter comme NA/ | =mutate(..., "NotInt" ~ NA_real_)= | L'interprète est absent pour ce pixel, mais les autres sont conservés ✅ |
+
+La *2e option* (NA) est souvent préférable car elle conserve plus d'information — elle est d'ailleurs gérée nativement par Krippendorff. Qu'en pensez-vous ?
+
+Je pense qu'il faut conserver le NotInt comme une classe à part entière.
+
+Bonne réflexion ! Si un interprète dit "je ne peux pas interpréter ce pixel", c'est une information en soi et un désaccord avec quelqu'un qui dit "Forêt". Il suffit alors de coder les 3 classes :
+
+---
+
+#+begin_src r
+library(dplyr)
+library(tidyr)
+library(irr)
+
+data_wide <- df_disag %>%
+  mutate(Classification = case_when(
+    Classification == "Forêt"     ~ 1,
+    Classification == "Non Forêt" ~ 2,
+    Classification == "NotInt"    ~ 3
+  )) %>%
+  pivot_wider(
+    id_cols     = c(plotid, sampleid),
+    names_from  = email,
+    values_from = Classification
+  )
+
+# Calcul
+mat <- data_wide %>%
+  select(-plotid, -sampleid) %>%
+  as.matrix()
+
+kripp.alpha(t(mat), method = "nominal")
+#+end_src
+
+---
+
+⚠️ Avec =method = "nominal"=, les valeurs numériques n'ont pas d'ordre — seule l'égalité compte. L'ordre =1, 2, 3= est donc sans importance, ce qui est correct ici car =NotInt= n'est ni "entre" Forêt et Non Forêt, ni plus proche de l'une que de l'autre.
+
+Est-ce possible de calculer à la main sans passer par le package irr. Et peut-on calculer aussi le désaccord brut facile à expliquer.
+
+Oui ! Voici les deux calculs à la main :
+
+---
+
+- 1. 📊 Désaccord brut
+
+Un pixel est en désaccord si les interprètes ne sont *pas tous unanimes* :
+
+#+begin_src r
+desaccord_brut <- data_wide %>%
+  rowwise() %>%
+  mutate(
+    valeurs    = list(na.omit(c_across(-c(plotid, sampleid)))),
+    unanime    = length(unique(valeurs[[1]])) == 1,
+    desaccord  = !unanime
+  ) %>%
+  ungroup() %>%
+  summarise(
+    n_pixels        = n(),
+    n_desaccord     = sum(desaccord),
+    taux_desaccord  = mean(desaccord)
+  )
+
+print(desaccord_brut)
+#+end_src
+
+Très facile à expliquer : /"X% des pixels n'ont pas reçu la même classification par tous les interprètes."/
+
+---
+
+- 2. 🏆 Krippendorff Alpha à la main
+
+Pour des données *nominales*, la formule est :
+
+#+begin_src 
+α = 1 - (D_o / D_e)
+#+end_src
+
+- /D_o/ = désaccord observé
+- /D_e/ = désaccord attendu par chance
+
+#+begin_src r
+# --- Préparer la matrice des interprètes uniquement ---
+mat <- data_wide %>%
+  select(-plotid, -sampleid) %>%
+  as.matrix()
+
+# --- Désaccord observé (D_o) ---
+# Pour chaque pixel, on compte les paires en désaccord
+do_pixel <- apply(mat, 1, function(row) {
+  vals <- na.omit(row)
+  n <- length(vals)
+  if (n < 2) return(NA)
+  # Nombre de paires en désaccord sur total de paires
+  paires_desaccord <- sum(outer(vals, vals, "!=")) / 2
+  paires_total     <- n * (n - 1) / 2
+  paires_desaccord / paires_total
+})
+
+D_o <- mean(do_pixel, na.rm = TRUE)
+
+# --- Désaccord attendu par chance (D_e) ---
+# Fréquence de chaque classe sur l'ensemble des annotations
+toutes_vals <- na.omit(as.vector(mat))
+n_total     <- length(toutes_vals)
+freq        <- table(toutes_vals) / n_total
+
+# D_e = 1 - somme(freq_k^2)  [proba que 2 annotations tirées au hasard diffèrent]
+D_e <- 1 - sum(freq^2)
+
+# --- Alpha ---
+alpha <- 1 - (D_o / D_e)
+
+cat("Désaccord observé  (D_o) :", round(D_o,  4), "\n")
+cat("Désaccord attendu  (D_e) :", round(D_e,  4), "\n")
+cat("Krippendorff Alpha       :", round(alpha, 4), "\n")
+#+end_src
+
+---
+
+- 🔑 Interprétation combinée
+
+| Métrique | Ce qu'elle mesure | Facile à expliquer ? |
+|---|---|---|
+| Désaccord brut | % pixels non unanimes | ✅ Très facile |
+| Krippendorff α | Désaccord au-delà du hasard | ⚠️ Necessite explication |
+
+Les deux sont complémentaires : le désaccord brut pour communiquer, l'alpha pour la rigueur statistique !
+
+> cat("Désaccord observé  (D_o) :", round(D_o,  4), "\n")
+Désaccord observé  (D_o) : 0.1903 
+> cat("Désaccord attendu  (D_e) :", round(D_e,  4), "\n")
+Désaccord attendu  (D_e) : 0.4909 
+> cat("Krippendorff Alpha       :", round(alpha, 4), "\n")
+Krippendorff Alpha       : 0.6125
+
+
+
+Voici l'interprétation de vos résultats :
+
+---
+
+*📊 Lecture des résultats*
+
+| Métrique | Valeur | Interprétation |
+|---|---|---|
+| D_o | 0.19 | 19% des paires d'annotations sont en désaccord |
+| D_e | 0.49 | Si c'était aléatoire, 49% des paires seraient en désaccord |
+| *α* | *0.61* | Les interprètes s'accordent bien au-delà du hasard |
+
+---
+
+*🔑 Interprétation de α = 0.61*
+
+- Le désaccord observé (0.19) est bien /inférieur/ au désaccord attendu par chance (0.49)
+- α = 0.61 signifie que les interprètes réduisent le désaccord aléatoire de *61%*
+- Selon les seuils classiques de Krippendorff :
+
+| α | Seuil |
+|---|---|
+| < 0.67 | Données à utiliser avec prudence |
+| 0.67 – 0.80 | Acceptable |
+| > 0.80 | Bon accord |
+
+⚠️ Vous êtes /légèrement en dessous de 0.67/, ce qui suggère que les données sont *utilisables mais avec prudence*. Il pourrait être utile d'identifier les types de pixels qui concentrent les désaccords (ex: pixels mixtes forêt/non-forêt, qualité d'image, saison...) pour expliquer les sources de confusion.
+
+Comment distinguer si un des interpreteurs est mauvais. Répondre en anglais.
+
+Good question! Here are several approaches to identify if one interpreter is systematically different from the others:
+
+---
+
+/1. 📊 Pairwise agreement (simple)/
+
+Compare each pair of interpreters directly :
+
+#+begin_src r
+library(dplyr)
+library(tidyr)
+
+# Get interpreter emails
+interpreters <- df_disag %>% 
+  pull(email) %>% 
+  unique()
+
+# All pairs
+pairs <- combn(interpreters, 2, simplify = FALSE)
+
+# Pairwise agreement rate
+pairwise_agreement <- lapply(pairs, function(pair) {
+  data_wide %>%
+    select(all_of(c(pair[1], pair[2]))) %>%
+    filter(!is.na(.[[1]]) & !is.na(.[[2]])) %>%
+    summarise(
+      interpreter_1  = pair[1],
+      interpreter_2  = pair[2],
+      n_pixels       = n(),
+      agreement_rate = mean(.[[1]] == .[[2]])
+    )
+}) %>%
+  bind_rows()
+
+print(pairwise_agreement)
+#+end_src
+
+A low agreement rate for one interpreter across /all pairs/ is a red flag 🚩.
+
+---
+
+/2. 🎯 Leave-one-out Alpha/
+
+Recalculate Krippendorff's Alpha by removing one interpreter at a time. If removing interpreter X /increases α significantly/, they are likely the problematic one :
+
+#+begin_src r
+# Alpha with all interpreters
+alpha_full <- alpha  # calculated previously
+
+# Alpha leaving one interpreter out
+loo_alpha <- lapply(interpreters, function(interp) {
+  
+  mat_loo <- data_wide %>%
+    select(-plotid, -sampleid, -all_of(interp)) %>%
+    as.matrix()
+  
+  # Recalculate D_o
+  do_pixel <- apply(mat_loo, 1, function(row) {
+    vals <- na.omit(row)
+    n <- length(vals)
+    if (n < 2) return(NA)
+    paires_desaccord <- sum(outer(vals, vals, "!=")) / 2
+    paires_total     <- n * (n - 1) / 2
+    paires_desaccord / paires_total
+  })
+  D_o_loo <- mean(do_pixel, na.rm = TRUE)
+  
+  # Recalculate D_e
+  toutes_vals <- na.omit(as.vector(mat_loo))
+  freq        <- table(toutes_vals) / length(toutes_vals)
+  D_e_loo     <- 1 - sum(freq^2)
+  
+  alpha_loo <- 1 - (D_o_loo / D_e_loo)
+  
+  data.frame(
+    removed_interpreter = interp,
+    alpha               = round(alpha_loo, 4),
+    alpha_change        = round(alpha_loo - alpha_full, 4)
+  )
+}) %>%
+  bind_rows() %>%
+  arrange(desc(alpha))
+
+print(loo_alpha)
+#+end_src
+
+| removed_interpreter | alpha | alpha_change |
+|---|---|---|
+| bad@example.com | 0.81 | +0.20 ✅ |
+| good1@example.com | 0.59 | -0.02 |
+| good2@example.com | 0.61 | 0.00 |
+
+---
+
+/3. 📐 Bias per interpreter/
+
+Check if one interpreter systematically over- or under-classifies as "Forest" :
+
+#+begin_src r
+bias <- df_disag %>%
+  filter(Classification != "NotInt") %>%
+  group_by(email) %>%
+  summarise(
+    n_total       = n(),
+    n_forest      = sum(Classification == "Forêt"),
+    pct_forest    = round(100 * mean(Classification == "Forêt"), 1),
+    n_notint      = sum(Classification == "NotInt"),
+    pct_notint    = round(100 * mean(Classification == "NotInt"), 1)
+  ) %>%
+  arrange(pct_forest)
+
+print(bias)
+#+end_src
+
+A very different =pct_forest= from the others suggests a /systematic bias/ 🚩.
+
+---
+
+/🔑 Summary : red flags for a bad interpreter/
+
+| Indicator | Red flag |
+|---|---|
+| Pairwise agreement | Low with /all/ other interpreters |
+| Leave-one-out α | Removing them /increases α notably/ |
+| Forest % | Very different from others |
+| NotInt % | Much higher (avoidance) or lower (overconfidence) |
+
+Combining these three approaches gives a robust picture of who might need retraining or whose annotations should be reviewed!
+
+J'obtiens ceci:
+
+> df_bad
+  removed alpha alpha_change
+1       S  69.2          8.0
+2       A  64.4          3.2
+3       O  60.7         -0.5
+
+Vos résultats sont clairs :
+
+---
+
+/🔍 Interprétation/
+
+| Interprète retiré | Alpha | Changement |
+|---|---|---|
+| *S* | 69.2 | *+8.0* 🚩 |
+| A | 64.4 | +3.2 |
+| O | 60.7 | -0.5 |
+
+---
+
+/📌 Conclusions/
+
+- *S est clairement le plus problématique* : retirer S augmente l'alpha de 8 points, passant de 61.2 à 69.2, ce qui fait même passer l'accord de /"à utiliser avec prudence"/ à /"acceptable"/
+
+- *A a un effet modéré* : retirer A améliore légèrement l'accord (+3.2), mérite d'être investigué mais n'est pas alarmant
+
+- *O est le meilleur interprète* : retirer O /dégrade/ légèrement l'accord (-0.5), il est cohérent avec les autres
+
+---
+
+/🔧 Prochaines étapes suggérées/
+
+1. Appliquer l'analyse de biais (% Forêt, % NotInt) sur *S* spécifiquement pour comprendre la nature de ses erreurs
+2. Regarder visuellement les pixels où *S* est seul en désaccord avec A et O
+3. Décider si les annotations de *S* doivent être *revues ou exclues*
+
+Voulez-vous identifier les pixels spécifiques où S est en désaccord ?
+

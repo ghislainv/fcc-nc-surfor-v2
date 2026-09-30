@@ -1,3 +1,9 @@
+outputs/out_forest2015/*
+!outputs/out_forest2015/comp_fc2015_amap_gfc_tmf.csv
+!outputs/out_forest2015/tmf/
+outputs/out_forest2015/tmf/*
+!outputs/out_forest2015/tmf/comp_amap_tmf.png
+
 # History files
 .Rhistory
 .Rapp.history
