@@ -25,9 +25,9 @@ import pandas as pd
 # 1. CONFIGURATION - à adapter
 # ---------------------------------------------------------------------------
 
-PROJECT_ID = "deforisk"               # votre project ID GCP lié à Earth Engine
-INPUT_CSV = "../data/df_surfor.csv"   # fichier d'entrée, colonnes 'lat' et 'lon'
-OUTPUT_CSV = "resultats_gfc_tmf.csv"  # fichier de sortie
+PROJECT_ID = "deforisk"                      # votre project ID GCP lié à Earth Engine
+INPUT_CSV = "../data/df_surfor_nostag.csv"   # fichier d'entrée, colonnes 'lat' et 'lon'
+OUTPUT_CSV = "resultats_gfc_tmf.csv"         # fichier de sortie
 LAT_COL = "lat"
 LON_COL = "lon"
 CHUNK_SIZE = 500                          # points par lot (baisser si erreurs de timeout)
@@ -55,7 +55,7 @@ def initialiser_ee(project_id):
         ee.Authenticate()
         ee.Initialize(project=project_id)
 
-        
+
 # ---------------------------------------------------------------------------
 # 3. CONSTRUCTION DE L'IMAGE COMBINÉE (Hansen + TMF)
 # ---------------------------------------------------------------------------
@@ -191,7 +191,7 @@ resultats = image_combinee.reduceRegions(fc, ee.Reducer.first(), scale=SCALE)
 
 task = ee.batch.Export.table.toDrive(
     collection=resultats,
-    description="extracting_gfc_tmf",
+    description="extract_gfc_tmf",
     fileFormat="CSV"
 )
 task.start()

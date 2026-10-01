@@ -9,10 +9,10 @@ library(sf)
 library(tidyr)
 
 # Output directory
-dir.create(here("outputs"))
+dir.create(here("outputs"), showWarnings=FALSE)
 
 # Load data
-df <- read_csv(here("data", "df_surfor_gee.csv"), show_col_types=FALSE)
+df <- read_csv(here("data", "df_surfor_gee_rmobs.csv"), show_col_types=FALSE)
 
 # ========================================================
 # Disagreement between interpreters
@@ -51,6 +51,12 @@ df_disag <- df_2000 |>
   bind_rows(df_for2021) |>
   mutate(Classification=ifelse(Classification %in% c("Indéterminé", "Non interprétable"), "NotInt", Classification))
 
+# Number of observations per date and interpreter
+df_nobs_inter <- df_disag |>
+  summarize(n=n(), .by=c(dataset, email)) |>
+  pivot_wider(id_cols=email, names_from=dataset, values_from=n) |>
+  write_csv(here("outputs", "df_nobs_interpreter.csv"))
+  
 # Wide data
 data_wide <- df_disag |>
   mutate(Classification = case_when(
@@ -309,7 +315,7 @@ df_res <- df_res |>
   arrange(years) |>
   write_csv(here("outputs", "conf_mat_forest_cover_2000_2008_2021.csv"))
 
-# Much lower OA for forest/non-forest classification (~0.70)A lot of forest is classified as non-forest by the two products
+# Much lower OA for forest/non-forest classification (~0.70). Much of the forest is classified as non-forest by the two products.
 
 # =====================================================================
 # Confusion matrix for forest cover change in 2000--2008 and 2008--2021
@@ -335,7 +341,6 @@ df_fcc <- df_cm |>
                                 for2021_pred_gfc_60=="Forest", "gain", fcc_p2_gfc_60)) |>
   mutate(fcc_p2_gfc_60=ifelse(for2008_pred_gfc_60=="NonForest" &
                                 for2021_pred_gfc_60=="NonForest", "stableNF", fcc_p2_gfc_60))
-
 
 # Predicted change from TMF
 df_fcc <- df_fcc |>
@@ -379,7 +384,8 @@ for (i in 1:n_maps) {
     # Confusion matrix
     cmat <- df_fcc |>
       mutate(obs=factor(.data[[paste0("fcc_", periods[j])]], levels=fcc_classes)) |>
-      mutate(pred=factor(.data[[paste0("fcc_", periods[j], "_", maps[i])]], levels=fcc_classes)) |>
+      mutate(pred=factor(.data[[paste0("fcc_", periods[j], "_", maps[i])]],
+                         levels=fcc_classes)) |>
       select(obs, pred) |>
       na.omit()
     conf_mat <- caret::confusionMatrix(
@@ -400,7 +406,7 @@ for (i in 1:n_maps) {
 }
 
 # Save
-df_freq |> write_csv(here("outputs", "conf_mat_fcc.csv"))
+df_freq |> write.csv(here("outputs", "conf_mat_fcc.csv"), row.names=TRUE)
 df_acc <- df_acc |>
   mutate(across(c("sen_gain", "spe_gain", "sen_loss", "spe_loss"), ~ round(.x, 3))) |>
   write_csv(here("outputs", "accurracy_fcc.csv"))
