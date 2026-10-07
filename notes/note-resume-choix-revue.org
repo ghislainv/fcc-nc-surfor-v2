@@ -1,0 +1,60 @@
+#+TITLE: Choix d'une revue : validation des cartes de changement de couverture forestière en Nouvelle-Calédonie (GFC et TMF)
+#+DATE: 2026-10-07
+#+LANGUAGE: fr
+#+OPTIONS: toc:2 num:nil
+
+* Contexte
+Article de validation, par photo-interprétation, de cartes de changement de couverture forestière en Nouvelle-Calédonie dérivées de produits globaux :
+- GFC (Global Forest Change) : perte de couvert.
+- TMF (Tropical Moist Forests) : forêt humide tropicale.
+
+* Résultats de l'étude (précisés en cours d'échange)
+- Désaccords entre interprètes jusqu'à 20 %.
+- Qualité des cartes variable selon l'interprète.
+- Premiers chiffres de surfaces forestières, gains et pertes (préliminaires).
+
+*Conséquence* : l'apport original est l'*incertitude des données de référence*, d'où une portée méthodologique au-delà de la Nouvelle-Calédonie.
+
+* Revues proposées
+** Angle méthodologique (le plus pertinent)
+- *Remote Sensing of Environment* : option ambitieuse, exige une analyse robuste de la propagation de l'incertitude de référence (cf. Foody 2010 ; Stehman & Foody 2019).
+- *GIScience & Remote Sensing* : très bon ajustement (évaluation d'exactitude, variabilité des interprètes).
+- *International Journal of Applied Earth Observation and Geoinformation (JAG)* : très bon ajustement, exigence un peu moindre que RSE.
+- *ISPRS Journal of Photogrammetry and Remote Sensing* : si angle fortement méthodologique.
+- *Science of Remote Sensing* (open access) : plus accessible.
+- *Remote Sensing* (MDPI) : évaluation rapide, APC à prévoir.
+- *Remote Sensing Applications: Society and Environment* : orienté applications.
+
+** Angle déforestation, conservation, politiques publiques
+(à privilégier seulement si les surfaces gain/perte sont consolidées)
+- *Environmental Research Letters*
+- *Biological Conservation*
+- *Forest Ecology and Management*
+- *Land Use Policy*, *Ecological Indicators*, *Forests* (MDPI), *Land* (MDPI)
+
+** Angle régional
+- *Pacific Conservation Biology*, *Pacific Science*
+- En français : *Revue Française de Photogrammétrie et de Télédétection*, *Cybergeo*, *Revue Forestière Française*
+
+** Article de données associé (jeu de validation)
+- *Data in Brief*, *Scientific Data*, *Earth System Science Data*
+
+* Recommandation
+- Premier choix réaliste : *GIScience & Remote Sensing* ou *JAG*.
+- Option ambitieuse : *RSE*, si l'analyse de propagation de l'incertitude est solide.
+- Option rapide : *Science of Remote Sensing* ou *Remote Sensing* (MDPI).
+- Vérifier périmètres, délais et frais de publication sur les sites des revues.
+
+* Pistes pour renforcer l'article
+- [ ] Suivre Olofsson et al. (2014) : échantillonnage stratifié, matrice de confusion, estimation des surfaces avec intervalles de confiance.
+- [ ] Expliciter les différences de définition de la forêt (seuils de couvert, hauteur, type de forêt) entre GFC et TMF.
+- [ ] Analyser les erreurs par milieu : forêt sèche, maquis minier, mangrove, savane à niaoulis, zones minières.
+- [ ] Quantifier le désaccord : kappa de Cohen ou de Fleiss, accord par classe (stable, perte, gain), situations de divergence (nuages, résolution, régénération).
+- [ ] Calculer précisions globale, utilisateur et producteur par interprète, puis avec consensus ou vote majoritaire.
+- [ ] Comparer les surfaces de gain et de perte (et leurs IC) selon l'interprète.
+- [ ] Formuler des recommandations : nombre minimal d'interprètes, double interprétation d'un sous-échantillon, protocole d'harmonisation, traitement des cas ambigus.
+- [ ] Publier les interprétations de chaque opérateur (article de données associé).
+- [ ] Discuter la qualité des images de référence (résolution, disponibilité temporelle).
+
+* Question en suspens
+- Combien d'interprètes ont traité les mêmes points d'échantillonnage, ou s'agit-il d'un sous-ensemble en double interprétation ? Cela conditionne le niveau de revue réaliste.
