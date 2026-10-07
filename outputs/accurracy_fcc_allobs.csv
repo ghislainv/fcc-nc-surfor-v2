@@ -1,0 +1,5 @@
+periods,maps,sen_gain,spe_gain,sen_loss,spe_loss
+p1,gfc_60,0,1,0.345,0.941
+p2,gfc_60,0,1,0.229,0.925
+p1,tmf,0.034,0.988,0.211,0.894
+p2,tmf,0.207,0.952,0.341,0.883

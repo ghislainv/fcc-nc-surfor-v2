@@ -11,9 +11,6 @@ library(tidyr)
 # Output directory
 dir.create(here("outputs"), showWarnings=FALSE)
 
-# Load data
-df <- read_csv(here("data", "df_surfor_gee_rmobs.csv"), show_col_types=FALSE)
-
 # ========================================================
 # Disagreement between interpreters
 # ========================================================
@@ -169,6 +166,10 @@ df_bad |>
 # Best percentage of tree cover for GFC based on year 2021
 # ========================================================
 
+# Load data
+# NB: no change betwenn selobs and allobs for forest2021_fnf
+df <- read_csv(here("data", glue("df_surfor_gee_selobs.csv")), show_col_types=FALSE)
+
 # Loop on tree cover
 perc <- seq(10, 90, by=10)
 mat_acc <- data.frame(perc, acc=NA)
@@ -186,7 +187,7 @@ for (i in 1:length(perc)) {
 }
 
 # Save results
-mat_acc |> write_csv(here("outputs", "mat_accuracy.csv"))
+mat_acc |> write_csv(here("outputs", "mat_accuracy_gfc_perc.csv"))
 
 # Which perc
 gfc_acc <- mat_acc$acc[which.max(mat_acc$acc)]
@@ -200,13 +201,13 @@ p <- mat_acc |>
   xlab("Tree cover (%)") +
   ylab("Overall accuracy") +
   scale_x_continuous(limits=c(0, 100), breaks=seq(from=0, to=100, by=20)) +
-  scale_y_continuous(limits=c(0.65, 0.85), breaks=seq(from=0.60, to=0.85, by=0.05)) +
+  scale_y_continuous(limits=c(0.60, 0.85), breaks=seq(from=0.60, to=0.85, by=0.05)) +
   theme_bw(base_size=18) +
   theme(
     panel.border = element_blank(),  # Supprime le cadre complet de la zone de tracé
     axis.line = element_line(color = "black") # Ajoute explicitement les lignes X et Y
   )
-ggsave(here("outputs", "plot_accuracy_gfc.pdf"))
+ggsave(here("outputs", "plot_accuracy_gfc_perc.pdf"))
 
 # Confusion matrix for best percentage
 for2021_pred_gfc <- ifelse((df$treecover2000 >= gfc_perc) & !(df$lossyear %in% c(1:20)),
@@ -259,6 +260,11 @@ comp_gfc_tmf_fnf2021 <- data.frame(
 # ========================================================
 # Confusion matrix for forest cover in 2000, 2008 and 2021
 # ========================================================
+
+# Load data
+select_obs <- FALSE
+suffix <- ifelse(select_obs, "selobs", "allobs")
+df <- read_csv(here("data", glue("df_surfor_gee_{suffix}.csv")), show_col_types=FALSE)
 
 # Predicted forest from GFC (considering tree cover >= 60%)
 df_cm <- df |>
@@ -313,7 +319,7 @@ df_res <- df_res |>
   mutate(n_f = ff + fnf, n_nf = nfnf + nff) |>
   mutate(across(c(oa, sen, spe, kappa), ~ round(.x, 3))) |>
   arrange(years) |>
-  write_csv(here("outputs", "conf_mat_forest_cover_2000_2008_2021.csv"))
+  write_csv(here("outputs", glue("conf_mat_forest_cover_2000_2008_2021_{suffix}.csv")))
 
 # Much lower OA for forest/non-forest classification (~0.70). Much of the forest is classified as non-forest by the two products.
 
@@ -406,9 +412,9 @@ for (i in 1:n_maps) {
 }
 
 # Save
-df_freq |> write.csv(here("outputs", "conf_mat_fcc.csv"), row.names=TRUE)
+df_freq |> write.csv(here("outputs", glue("conf_mat_fcc_{suffix}.csv")), row.names=TRUE)
 df_acc <- df_acc |>
   mutate(across(c("sen_gain", "spe_gain", "sen_loss", "spe_loss"), ~ round(.x, 3))) |>
-  write_csv(here("outputs", "accurracy_fcc.csv"))
+  write_csv(here("outputs", glue("accurracy_fcc_{suffix}.csv")))
 
-
+# End

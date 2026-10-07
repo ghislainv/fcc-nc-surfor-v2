@@ -25,8 +25,9 @@ df_2021 <- read_csv(here("data_raw", file_2021), show_col_types=FALSE) |>
 
 # Remove stagiaire observations
 # and select only pixels were both interpreters agree for 2008
-remove_obs <- TRUE
-if (remove_obs == TRUE) {
+select_obs <- FALSE
+if (select_obs == TRUE) {
+  suffix <- "selobs"
   df_2000 <- df_2000 |>
     filter(email != "stagiaire@oeil.nc")
   
@@ -41,6 +42,8 @@ if (remove_obs == TRUE) {
   df_2021 <- df_2021 |>
     filter(email != "stagiaire@oeil.nc")
 } else {
+  suffix <- "allobs"
+  set.seed(1234)
   df_2000 <- df_2000 |>
     group_by(plotid, sampleid) |>
     # Select one observation at random
@@ -91,29 +94,27 @@ file_for2021_fnf <- "raster-intersect_ceo-38675-samples_F-NF-2021.csv"
 df_for2021_fnf <- read_csv(here("data_raw", file_for2021_fnf), show_col_types=FALSE) |>
   select(-c(17:22)) |>
   mutate(dataset="for2021") |>
+  group_by(plotid, sampleid) |>
+  # Majority of the observations per pixel
+  filter(Classification == names(which.max(table(Classification)))) |>
+  slice(1) |>
+  ungroup() |>
   rename(for2021_fnf=Classification)
-
-### !!!!!!!!!!!! TO BE DONE
-
-# Majority of the observations per pixel having three interpreters for for2021_fnf
-
-###########################
-
 
 # Combine the two types of data (change and cover)
 df_surfor <- df_change |>
   mutate(dataset="change") |>
   mutate(collection_time=as.character(collection_time)) |>
   bind_rows(df_for2021_fnf) |>
-  write_csv(here("data", "df_surfor_rmobs.csv"))
+  write_csv(here("data", glue("df_surfor_{suffix}.csv")))
   
 # Run the python script to get GEE data for GFC and TFM
 # system("python ../python/get-gee-data.py")
 
 # Combining data-sets
-df_gee <- read_csv(here("data", "extract_gfc_tmf_rmobs.csv"), show_col_types=FALSE) |>
+df_gee <- read_csv(here("data", glue("extract_gfc_tmf_{suffix}.csv")), show_col_types=FALSE) |>
   select(-lat, -lon)
-df_surfor_gee <- read_csv(here("data", "df_surfor_rmobs.csv"), show_col_types=FALSE) |>
+df_surfor_gee <- read_csv(here("data", glue("df_surfor_{suffix}.csv")), show_col_types=FALSE) |>
   bind_cols(df_gee) |>
   mutate(for2000 = factor(recode_values(
     for2000,
@@ -144,11 +145,11 @@ df_surfor_gee <- read_csv(here("data", "df_surfor_rmobs.csv"), show_col_types=FA
 df_surfor_gee <- df_surfor_gee |>
   select(
     plotid, sampleid, sample_internal_id, lon, lat, imagery_title,
-    email,
+    email, dataset,
     for2000, for2008, for2021,
     fcc_p1, fcc_p2, for2021_fnf,
     Dec1999, Dec2000, Dec2007, Dec2008, Dec2020, Dec2021,
     gain, lossyear, treecover2000) |>
-  write_csv(here("data", "df_surfor_gee_rmobs.csv"))
+  write_csv(here("data", glue("df_surfor_gee_{suffix}.csv")))
 
 # End

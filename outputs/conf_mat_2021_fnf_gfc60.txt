@@ -2,26 +2,26 @@ Confusion Matrix and Statistics
 
            Reference
 Prediction  Forest NonForest
-  Forest      4132       805
-  NonForest    966      3878
-                                          
-               Accuracy : 0.8189          
-                 95% CI : (0.8112, 0.8265)
-    No Information Rate : 0.5212          
-    P-Value [Acc > NIR] : < 2.2e-16       
-                                          
-                  Kappa : 0.6377          
-                                          
- Mcnemar's Test P-Value : 0.0001435       
-                                          
-            Sensitivity : 0.8105          
-            Specificity : 0.8281          
-         Pos Pred Value : 0.8369          
-         Neg Pred Value : 0.8006          
-             Prevalence : 0.5212          
-         Detection Rate : 0.4225          
-   Detection Prevalence : 0.5048          
-      Balanced Accuracy : 0.8193          
-                                          
-       'Positive' Class : Forest          
-                                          
+  Forest      3700       765
+  NonForest    851      3613
+                                         
+               Accuracy : 0.819          
+                 95% CI : (0.8109, 0.827)
+    No Information Rate : 0.5097         
+    P-Value [Acc > NIR] : < 2e-16        
+                                         
+                  Kappa : 0.638          
+                                         
+ Mcnemar's Test P-Value : 0.03448        
+                                         
+            Sensitivity : 0.8130         
+            Specificity : 0.8253         
+         Pos Pred Value : 0.8287         
+         Neg Pred Value : 0.8094         
+             Prevalence : 0.5097         
+         Detection Rate : 0.4144         
+   Detection Prevalence : 0.5001         
+      Balanced Accuracy : 0.8191         
+                                         
+       'Positive' Class : Forest         
+                                         

@@ -25,9 +25,9 @@ import pandas as pd
 # 1. CONFIGURATION - à adapter
 # ---------------------------------------------------------------------------
 
-PROJECT_ID = "deforisk"                      # votre project ID GCP lié à Earth Engine
-INPUT_CSV = "../data/df_surfor_nostag.csv"   # fichier d'entrée, colonnes 'lat' et 'lon'
-OUTPUT_CSV = "resultats_gfc_tmf.csv"         # fichier de sortie
+PROJECT_ID = "deforisk"                    # votre project ID GCP lié à Earth Engine
+INPUT_CSV = "../data/df_surfor_allobs.csv"  # fichier d'entrée, colonnes 'lat' et 'lon'
+OUTPUT_CSV = "resultats_gfc_tmf.csv"       # fichier de sortie
 LAT_COL = "lat"
 LON_COL = "lon"
 CHUNK_SIZE = 500                          # points par lot (baisser si erreurs de timeout)
