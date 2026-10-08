@@ -3,6 +3,8 @@ outputs/out_forest2015/*
 !outputs/out_forest2015/tmf/
 outputs/out_forest2015/tmf/*
 !outputs/out_forest2015/tmf/comp_amap_tmf.png
+outputs/fcc-map-2015-2025-newcal
+outputs/fragmentation
 
 # History files
 .Rhistory
