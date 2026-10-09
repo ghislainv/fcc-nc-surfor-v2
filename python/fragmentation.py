@@ -1,6 +1,8 @@
 """Forest fragmentation."""
 
 from pathlib import Path
+import sys
+import subprocess
 
 import numpy as np
 import rasterio
@@ -123,5 +125,72 @@ plt.xticks(rotation=45, ha='right')
 plt.tight_layout()
 plt.savefig(ofile, dpi=300, bbox_inches='tight')
 plt.close()
+
+# =======================
+# Forest patches
+# =======================
+
+# Install GRASS and l'API Python
+# sudo apt install grass grass-dev
+
+# Append GRASS to the python system path
+sys.path.append(
+    subprocess.check_output(["grass", "--config", "python_path"],
+                            text=True).strip()
+)
+try:
+    import grass.script as gs
+    from grass.tools import Tools
+    print("GRASS has been imported")
+except ImportError as e:
+    print(f"Erreur : {e}")
+
+# Create a new project
+project = "/tmp/grassproject_epsg_32758"
+gs.create_project(project, epsg="32758")
+print("GRASS GIS session:")
+print(gs.parse_command("g.gisenv", flags="s"))
+
+# Run GRASS tools
+session = gs.setup.init(project)
+tools = Tools(session=session)
+
+# Import the raster
+for2025 = out_dir / "for2025.tif"
+tools.r_in_gdal(
+    input=for2025,
+    output="forest"
+)
+tools.g_region(raster="forest")
+
+# Create a mask for the forest (value 1)
+tools.r_mapcalc(
+    expression="forest_mask = if(forest == 1, 1, null())",
+    overwrite=True
+)
+
+# Find the patches (connected components)
+# r.clump: groups adjacent cells into patches
+tools.r_clump(
+    input="forest_mask",
+    output="patches",
+    overwrite=True
+)
+
+# Calculate statistics per patch
+# r.report (statistics per category)
+rapport = tools.r_report(map="patches", units="meters", flags="h")
+print(rapport)
+
+# Export to an attribute table
+tools.r_to_vect(input="patches", output="patches_vect", type="area")
+tools.v_to_db(map="patches_vect", option="area", columns="area_ha",
+              unit="hectares")
+tools.v_to_db(map="patches_vect", option="compact", columns="compact")
+tools.v_to_db(map="patches_vect", option="fd", columns="fd")
+tools.v_to_db(map="patches_vect", option="perimeter", columns="perimeter",
+              unit="kilometers")
+ofile = out_dir / "forest_patches.csv"
+tools.db_out_ogr(input="patches_vect", output=ofile, format="CSV")
 
 # End
