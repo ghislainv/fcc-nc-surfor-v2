@@ -1,0 +1,152 @@
+#+TITLE: Validation of Global Forest Cover Products and Analysis of Deforestation, Forest Regrowth and Forest Fragmentation in New Caledonia (2005–2025)
+
+#+AUTHOR: @@latex:Ghislain Vieilledent$^{\star, 1, 2, 3}$ \and Laura Lagourgue$^{4}$ \and Marjolaine David$^{4}$ \and Adrien Bertaud$^{4}$ \and Oriane Bruyère$^{4}$ \and Philippe Birnbaum$^{1, 2, 3}$ \and Thomas Ibanez$^{1, 5}$ \and Nathan Eltabet$^{1, 5}$ \and David Bruy$^{1, 5}$ \and Patrick Heuret$^{1, 5, 6}$ \and Fabien Albouy$^{4}$@@
+
+#+OPTIONS: H:3 toc:nil title:t author:t ^:{} num:t date:nil
+#+TAGS: export(e) noexport(n) ignore(i)
+#+EXPORT_SELECT_TAGS: export
+#+EXPORT_EXCLUDE_TAGS: noexport
+
+#+LANGUAGE: en
+#+LATEX_CLASS: koma-article
+#+LATEX_CLASS_OPTIONS: [paper=a4, fontsize=12pt, DIV=13, english, dvipsnames]
+
+#+LATEX_HEADER: \usepackage{amsfonts}
+#+LATEX_HEADER: \usepackage{bookmark}
+#+LATEX_HEADER: \usepackage{xcolor}
+#+LATEX_HEADER: \definecolor{myblue}{RGB}{0,101,165}
+#+LATEX_HEADER: \hypersetup{colorlinks=true, allcolors=myblue}
+#+LATEX_HEADER: \definecolor{bg}{rgb}{0.95,0.95,0.95}
+#+LATEX_HEADER: \definecolor{darkgreen}{RGB}{0,150,0}
+#+LATEX_HEADER: \usepackage{booktabs}
+#+LATEX_HEADER: \usepackage{colortbl}
+#+LATEX_HEADER: \addtokomafont{title}{\color{myblue}}
+#+LATEX_HEADER: \usepackage[modulo]{lineno}
+#+LATEX_HEADER: \usepackage{float}
+# https://tex.stackexchange.com/questions/135747/problem-with-and-within-hypersetuppdfauthor
+#+LATEX_HEADER: \pdfstringdefDisableCommands{\def\and{and }}
+# Caption with KOMA
+#+LATEX_HEADER: \setcapindent{0em}
+# #+LATEX_HEADER: \usepackage[numbers,sort&compress,merge,round]{natbib}
+
+#+LINK: TMF https://forobs.jrc.ec.europa.eu/TMF
+
+#+PROPERTY: :dir ~/Code/fcc-nc-surfor-v2
+#+PROPERTY: header-args:R  :session *R*
+#+PROPERTY: header-args :eval never-export
+
+#+BIBLIOGRAPHY: biblio/biblio.bib
+#+CITE_EXPORT: csl ecology.csl
+
+* Affiliations                                                       :ignore:
+
+#+begin_export latex
+\vspace{-1.5cm}
+\begin{center}
+{\small
+$^{1}$AMAP, Univ Montpellier, CIRAD, CNRS, INRAE, IRD, Montpellier, FRANCE\\
+$^{2}$CIRAD, UMR AMAP, F-34398 Montpellier, FRANCE\\
+$^{3}$IAC, Nouméa, NEW CALEDONIA\\
+$^{4}$OEIL, Nouméa, NEW CALEDONIA\\
+$^{5}$IRD, UMR AMAP, Nouméa, NEW CALEDONIA\\
+$^{6}$INRAE, UMR AMAP, Montpellier, FRANCE\\
+$^{\star}$Correspondance: \href{mailto:ghislain.vieilledent@cirad.fr}{\texttt{ghislain.vieilledent@cirad.fr}}}
+\end{center}
+#+end_export
+
+* Abstract                                                           :ignore:
+
+*** Text                                                           :ignore:
+
+#+LATEX: \linenumbers
+#+LATEX: \vspace{0.10cm}
+#+LATEX: \enlargethispage{\baselineskip}
+
+#+begin_abstract
+New Caledonia has been classified as a hotspot of biodiversity.
+@@latex:\par\vskip\baselineskip\noindent@@
+\small *Keywords*: afforestation, biodiversity hotspot, deforestation, forest cover, land use change, photo-interpretation, regrowth, tropical forests, New-Caledonia, uncertainty.\\
+*Running title*: Forest cover change in New Caledonia (2005--2025).
+#+end_abstract
+
+\newpage
+
+* Introduction                                                    
+
+* Materials and Methods
+
+** Photo-interpretation
+
+*** Forest-cover for year 2021
+
+*** Forest cover change for periods 2000--2008 and 2008--2021
+
+** Disagreement between interpreters
+
+** Global forest products
+
+** Confusion matrices and accuracy of forest maps
+
+** Comparison with the 2015 forest cover map derived from aerial photographs
+
+** Deriving 2005--2015--2025 forest cover change maps from TMF for New Caledonia
+
+** Analysis of forest fragmentation for year 2025
+
+* Results
+
+* Discussion
+
+\newpage
+
+* Figures
+
+** Figure X
+
+#+NAME: fig:fcc-2015-2025
+#+CAPTION: *Map of forest cover change for 2015--2025.*
+#+ATTR_LATEX: :width \linewidth :placement [H]
+[[file:figures/fcc_tmf_10yr.png]]
+
+\newpage
+
+** Figure X
+
+#+NAME: fig:dist-edge
+#+CAPTION: *Distribution of 30 m forest pixels in classes of distance to forest edge.* For year 2025.
+#+ATTR_LATEX: :width 0.8\linewidth :placement [H]
+[[file:figures/distance_edge_histogram.png]]
+
+\newpage
+
+** Figure X
+
+#+NAME: fig:amap-map
+#+CAPTION: *Comparing TMF derived map with forest cover map derived from aerial photographs for the year 2015.*
+#+ATTR_LATEX: :width \linewidth :placement [H]
+[[file:figures/comp_amap_tmf.png]]
+
+\newpage
+
+** Figure X
+
+#+NAME: fig:gfc-perc
+#+CAPTION: *Identifying the best tree cover threshold for defining forest with the GFC product.*
+#+ATTR_LATEX: :width 0.8\linewidth :placement [H]
+[[file:figures/plot_accuracy_gfc_perc.pdf]]
+
+\newpage
+
+* Tables
+
+* Acknowledgements
+
+This research received fundings from the SURFOR project funded by DAFE ("/Direction du service d’État de l’Agriculture, de la Forêt et de l'Environnement/"). The authors declare no conflicts of interest.
+
+* Authors contribution
+
+GV, AB and FA conceived and designed the study. FA and AB secured the research funding. AB and OB, assisted by a graduate trainee, carried out the photo-interpretation. GV, with support from LL and MD, performed the data analysis. GV drafted the manuscript, with significant input from LL. PB, TI, and NE contributed to the derivation of the 2015 forest-cover map from aerial photographs. PH and DB provided critical review of the final forest-cover change map. All authors read, reviewed, and approved the final version of the manuscript.
+
+* Data and code availability
+
+Raw data, code and products are available on [[https://github.com/ghislainv/fcc-nc-surfor-v2][GitHub]] and have been permanently archived in the Cirad Dataverse.
