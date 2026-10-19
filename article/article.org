@@ -73,13 +73,31 @@ New Caledonia has been classified as a hotspot of biodiversity.
 
 * Introduction                                                    
 
+\newpage
+
 * Materials and Methods
 
 ** Photo-interpretation
 
-*** Forest-cover for year 2021
+*** Forest-cover (forest/non-forest) for the year 2021
+
+To obtain a reference dataset for the forest cover, we used very high spatial resolution (< 10 m) Pléiades satellite images covering the Southern Province of New Caledonia for the year 2021 (Fig. 1). Spatial resolution is 0.5 m for panchromatic images (one black and white band) and 2 m for multispectral images (four bands with red, green, blue and near infra-red bands). These non-free images were provided by the technical services of the Southern Province. The Southern Province covers about 38% of New Caledonia land area of 18,576 km^{2}.
+
+Using the Collect Earth Online software (https://www.collect.earth/), we randomly sampled 1050 points in the Southern Province that were used to define the center of a cluster of nine (three by three) 30 m pixels. We obtained a total of 9450 sampled pixels. Three interpreters identified the forest cover status of the pixels by photo-interpreting the Pléiades satellite images. Each interpreter classified a part (332) of the 1050 nine-pixel clusters independently from the other interpreters. Five percent of the clusters (54 clusters, corresponding to 486 pixels) were interpreted by the three interpreters in order to quantify the disagreement between interpreters [cite:@Olofsson2014].
+
+The interpreters assigned each pixel to one of three forest cover classes: "forest", "non-forest", or "not interpretable". The class "not interpretable" was applied to pixels obscured by clouds or shadows, or where the quality of the Pléiades imagery was insufficient to make a reliable determination. A pixel was classified as "forest" if a majority of the 30 by 30 m pixel was covered by forest. Forest was defined as a contiguous area of land covered by tree crowns of height greater than or equal to 5 m, exhibiting specific tonal, textural, and spatial patterns clearly distinct from other land cover types. The main other land cover types encountered in New Caledonia include bare soil, grasslands and savanna, mining maquis (a shrubland vegetation type characteristic of nutrient-poor ultramafic soils) and urban areas.
+
+The interpreters made no distinction between different forest types existing in New Caledonia. Although moist tropical forest is the dominant forest type in New Caledonia (>500,000 ha, [cite//b:@Myers2000]), relict dry tropical forests (10,000 ha) occur in the drier rain shadow of mountains along the west coast [cite:@Bouchet1995], while tree plantations are found in certain specific locations (e.g. 4500 ha of /Pinus caribaea/ Morelet (Pinaceae) at the Tango plateau) and mangroves fringe the coastline (estimated at 29,627 ha in 2025 after [cite//b:@Bunting2022]).
+
+A particular challenge in New Caledonia lies in distinguishing mining maquis from forest on satellite imagery, as well-developed maquis stands can reach several meters in height, making them visually similar to low-stature forest formations, yet typically remaining below the 5 m height threshold used to define forest. Interpreters underwent a training phase prior to performing the pixel classification, during which difficult cases were discussed and clarification guidelines were established in order to minimize variability between interpreters.
 
 *** Forest cover change for periods 2000--2008 and 2008--2021
+
+To obtain reference datasets for the study of the forest cover change for the periods 2000--2008 and 2008--2021, we used a combination of 0.5 m resolution aerial photographs for the years 2000, 2007 and 2008 and Pléiades satellite images for the year 2021. Aerial photographs were provided by the DITTT ("/Direction des Infrastructures, de la Topographie et des Transports Terrestres/") of the Government of New Caledonia. Intersection of aerial photographs in 2000 and 2007/2008 covered an area of 109,355 ha, corresponding to 6% of New Caledonia land area. Intersection of aerial photographs in 2007/2008 and Pléiades images in 2021 covered an area of 558,077 ha, corresponding to 30% of New Caledonia land area.
+
+Stratified sampling was employed to collect the reference dataset for forest cover change. This approach was adopted given the rarity of forest change events, which usually occur at a rate close to 1% per year [cite/t:@Olofsson2014]. Stratification was based on the classes of change obtained from the GFC and TMF products regarding the forest cover: "gain" or "loss". To assess change between 2000 and 2008, we drew a stratified sample of 1000 points: 600 in areas classified as loss by either GFC (300 points) or TMF (300 points), and 400 in areas classified as gain by either GFC (200 points) or TMF (200 points). Since GFC gain data are only available for the period 2000--2012 [cite:@Hansen2013], we used this layer to sample the 200 points corresponding to GFC gain for the period 2000--2008. To assess change between 2008 and 2021, we drew a stratified sample of 850 points: 600 in areas classified as loss by either GFC (300 points) or TMF (300 points), and 250 in areas classified as gain by TMF. As before, points were used to define the center of a cluster of nine (three by three) 30 m pixels. We thus obtained a total of 9000 sampled pixels for the period 2000--2008 and 7650 pixels for the period 2008--2021.
+
+Two interpreters classified the 9000 and 7650 pixels for the year 2000 and 2021 respectively, while three interpreters classified the 16650 pixels for the pivotal year 2008. As previously, five percent of the pixels were classified by several interpreters at each date: by two interpreters for years 2000 and 2021, and by three interpreters for the year 2008. Pixels were classified as "forest", "non-forest, or "not interpretable" at each date using the same forest definition as before. From the forest cover classification at each date, we derived five classes of forest cover change for the two periods: "loss", "gain", "stable forest", "stable non-forest", and "not interpretable".
 
 ** Disagreement between interpreters
 
@@ -91,13 +109,17 @@ New Caledonia has been classified as a hotspot of biodiversity.
 
 ** Deriving 2005--2015--2025 forest cover change maps from TMF for New Caledonia
 
-** Analysis of forest fragmentation for year 2025
+** Analysis of forest fragmentation for the year 2025
 
 * Results
 
 * Discussion
 
 \newpage
+
+* References
+
+#+PRINT_BIBLIOGRAPHY:
 
 * Figures
 
@@ -149,4 +171,4 @@ GV, AB and FA conceived and designed the study. FA and AB secured the research f
 
 * Data and code availability
 
-Raw data, code and products are available on [[https://github.com/ghislainv/fcc-nc-surfor-v2][GitHub]] and have been permanently archived in the Cirad Dataverse.
+Raw data, code and products are available on [[https://github.com/ghislainv/fcc-nc-surfor-v2][GitHub]] and will be permanently archived in the Cirad Dataverse as soon as the article is accepted for publication.
