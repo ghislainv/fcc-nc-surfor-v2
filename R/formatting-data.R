@@ -95,11 +95,17 @@ df_for2021_fnf <- read_csv(here("data_raw", file_for2021_fnf), show_col_types=FA
   select(-c(17:22)) |>
   mutate(dataset="for2021") |>
   group_by(plotid, sampleid) |>
+  # Set "Non interprétable" if three different interpretations (in fact it is never the case)
+  mutate(Commentaire = paste("agreement:", max(table(Classification)), "/", length(Classification))) |>
+  mutate(Classification = ifelse(length(unique(Classification)) == 3, "Non interprétable", Classification)) |> 
   # Majority of the observations per pixel
   filter(Classification == names(which.max(table(Classification)))) |>
   slice(1) |>
   ungroup() |>
   rename(for2021_fnf=Classification)
+
+df_for2021_fnf |>
+  filter(Commentaire == "agreement: 3 / 3")
 
 # Combine the two types of data (change and cover)
 df_surfor <- df_change |>
