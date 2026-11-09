@@ -62,23 +62,23 @@ df_for2021_fnf <- read_csv(here("data_raw", file_for2021_fnf), show_col_types=FA
 df_surfor <- df_change |>
   bind_rows(df_for2021_fnf) |>
   select(plotid, sampleid, sample_internal_id, lon, lat, dataset) |>
-  write_csv(here("data", "df_surfor_for_gee.csv"))
+  write_csv(here("data", "df_points_for_gee.csv"))
   
 # Run the python script to get GEE data for GFC and TFM
 # system("python ../python/get-gee-data.py")
 
 # Combining data-sets
-df_gee <- read_csv(here("data", "extract_gee_gfc_tmf.csv"), show_col_types=FALSE) |>
+extract_gee <- read_csv(here("data", "extract_gee_gfc_tmf.csv"), show_col_types=FALSE) |>
   select(-lat, -lon)
-df_surfor_gee <- read_csv(here("data", "df_surfor_for_gee.csv"), show_col_types=FALSE) |>
-  bind_cols(df_gee)
+df_gee <- read_csv(here("data", "df_points_for_gee.csv"), show_col_types=FALSE) |>
+  bind_cols(extract_gee)
 
 # Select variables and write
-df_surfor_gee <- df_surfor_gee |>
+df_gee <- df_gee |>
   select(
     plotid, sampleid, sample_internal_id, lon, lat, dataset,
     Dec2003, Dec2004, Dec2007, Dec2008, Dec2020, Dec2021,
     gain, lossyear, treecover2000) |>
-  write_csv(here("data", "df_surfor_gee.csv"))
+  write_csv(here("data", "df_gee.csv"))
 
 # End
