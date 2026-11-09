@@ -8,6 +8,9 @@ outputs/fragmentation
 article/figures
 article/article.pdf
 
+# Emacs
+.dir-locals.el
+
 # History files
 .Rhistory
 .Rapp.history

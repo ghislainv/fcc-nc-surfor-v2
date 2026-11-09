@@ -26,8 +26,8 @@ import pandas as pd
 # ---------------------------------------------------------------------------
 
 PROJECT_ID = "deforisk"                     # your GCP project ID linked to Earth Engine
-INPUT_CSV = "../data/df_surfor_allobs.csv"  # input file, must contain 'lat' and 'lon' columns
-OUTPUT_CSV = "results_gfc_tmf_allobs.csv"   # output file
+INPUT_CSV = "../data/df_surfor_for_gee.csv"  # input file, must contain 'lat' and 'lon' columns
+OUTPUT_CSV = "extract_gee_gfc_tmf.csv"   # output file
 LAT_COL = "lat"
 LON_COL = "lon"
 CHUNK_SIZE = 500                            # points per chunk (reduce if you encounter timeouts)
@@ -40,7 +40,8 @@ HANSEN_BANDS = ["treecover2000", "loss", "lossyear", "gain", "datamask"]
 
 # TMF Annual Changes bands to extract
 TMF_ASSET = "projects/JRC/TMF/v1_2025/AnnualChanges"
-TMF_BANDS = ["Dec2003", "Dec2004", "Dec2007", "Dec2008", "Dec2020", "Dec2021"]
+TMF_BANDS = ["Dec2000", "Dec2003", "Dec2004", "Dec2007",
+             "Dec2008", "Dec2020", "Dec2021"]
 
 
 # ---------------------------------------------------------------------------
@@ -192,7 +193,7 @@ results = combined_image.reduceRegions(fc, ee.Reducer.first(), scale=SCALE)
 
 task = ee.batch.Export.table.toDrive(
     collection=results,
-    description="extract_gfc_tmf",
+    description="extract_gee_gfc_tmf",
     fileFormat="CSV"
 )
 task.start()
