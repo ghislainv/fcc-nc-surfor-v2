@@ -2,8 +2,8 @@
 
 import os
 from pathlib import Path
-
 import zipfile
+
 import requests
 from osgeo import gdal, ogr
 import geefcc
@@ -35,8 +35,8 @@ out_dir = Path("outputs", "out_forest2015")
 gpkg_file = out_dir / "gadm-newcal" / "grande-terre.gpkg"
 gpkg_file_proj = out_dir / "gadm-newcal" / "grande-terre_utm58s.gpkg"
 gdal.VectorTranslate(
-    str(gpkg_file_proj),   # fichier de sortie
-    str(gpkg_file),          # fichier d'entrée
+    str(gpkg_file_proj),    # fichier de sortie
+    str(gpkg_file),         # fichier d'entrée
     dstSRS="EPSG:32758",    # UTM 58S
     format="GPKG"
 )
@@ -153,7 +153,7 @@ with rasterio.open(file, "r") as src:
         forest_area += np.sum(data == 1) * pixel_area
 land_area_amap = np.round(land_area).astype(int)
 forest_area_amap = np.round(forest_area).astype(int)
-forest_perc_amap = np.round(100 * forest_area / land_area).astype(int)
+forest_perc_amap = np.round(100 * forest_area / land_area, 1)
 
 # ========================================================
 # Get GFC with geefcc
@@ -173,7 +173,7 @@ geefcc.get_fcc_loss(
     buff=0,
     years=years,
     source="gfc",
-    perc=60,
+    perc=65,
     tile_size=1,
     output_file=forest_file,
     parallel=True,
@@ -190,7 +190,7 @@ geefcc.sum_raster_bands(
 )
 
 # Compute statistics (and reproject)
-ofile = gfc_dir / "fcc_stat_2005_2015_2025_gfc60.csv"
+ofile = gfc_dir / "fcc_stat_2005_2015_2025_gfc65.csv"
 res_df_gfc60 = geefcc.stat_fcc_loss(
     input_file=fcc_file,
     years=years,
@@ -243,7 +243,7 @@ with rasterio.open(file, "r") as src:
         forest_area += np.sum(data == 1) * pixel_area
 land_area_gfc = np.round(land_area).astype(int)
 forest_area_gfc = np.round(forest_area).astype(int)
-forest_perc_gfc = np.round(100 * forest_area / land_area).astype(int)
+forest_perc_gfc = np.round(100 * forest_area / land_area, 1)
 
 # ========================================================
 # Get TMF with geefcc
@@ -308,7 +308,7 @@ with rasterio.open(file, "r") as src:
         forest_area += np.sum(data == 1) * pixel_area
 land_area_tmf = np.round(land_area).astype(int)
 forest_area_tmf = np.round(forest_area).astype(int)
-forest_perc_tmf = np.round(100 * forest_area / land_area).astype(int)
+forest_perc_tmf = np.round(100 * forest_area / land_area, 1)
 
 # ========================================================
 # Comparison
@@ -355,7 +355,7 @@ row_totals = arr.sum(axis=1)
 col_totals = arr.sum(axis=0)
 pe = np.sum(row_totals * col_totals) / (total_pixels ** 2)
 kappa = (overall_accuracy - pe) / (1 - pe)
-(OA_gfc, K_gfc) = np.round((overall_accuracy, kappa), 2)
+(OA_gfc, K_gfc) = np.round((overall_accuracy, kappa), 3)
 
 # Confusion matrix Amap / TMF
 rasterA = amap_dir / "land_forest_amap.tif"
@@ -398,19 +398,64 @@ row_totals = arr.sum(axis=1)
 col_totals = arr.sum(axis=0)
 pe = np.sum(row_totals * col_totals) / (total_pixels ** 2)
 kappa = (overall_accuracy - pe) / (1 - pe)
-(OA_tmf, K_tmf) = np.round((overall_accuracy, kappa), 2)
+(OA_tmf, K_tmf) = np.round((overall_accuracy, kappa), 3)
+
+# Confusion matrix GFC / TMF
+rasterA = gfc_dir / "land_forest_gfc.tif"
+rasterB = tmf_dir / "land_forest_tmf.tif"
+otif = tmf_dir / "comp_tmf_gfc.tif"
+ocsv = comp = tmf_dir / "comp_tmf_gfc.csv"
+(ff, fn, nf, nn) = (0, 0, 0, 0)
+with rasterio.open(rasterA) as srcA, rasterio.open(rasterB) as srcB:
+    profile = srcA.profile
+    profile.update(dtype="uint8", nodata=255, compress="deflate", predictor=2,
+                   zlevel=6, tiled=True, blockxsize=256, blockysize=256)
+    with rasterio.open(otif, "w", **profile) as dst:
+        for _, window in srcA.block_windows(1):
+            # Data
+            A = srcA.read(1, window=window)
+            B = srcB.read(1, window=window)
+            # Map
+            res = np.ones_like(A) * 255
+            res[np.where((A == 0) & (B == 0))] = 0
+            res[np.where((A == 1) & (B == 1))] = 1
+            res[np.where((A == 1) & (B == 0))] = 2
+            res[np.where((A == 0) & (B == 1))] = 3
+            dst.write(res.astype("uint8"), 1, window=window)
+            # Confusion matrix
+            ff += np.sum((A == 1) & (B == 1))
+            fn += np.sum((A == 1) & (B == 0))
+            nf += np.sum((A == 0) & (B == 1))
+            nn += np.sum((A == 0) & (B == 0))
+arr = np.round(np.array([ff, fn, nf, nn]) * pixel_area).astype(int)
+arr = arr.reshape(2, 2, order="F")
+df = pd.DataFrame(arr)
+df = df.rename(columns={0: "f_ref", 1: "n_ref"},
+               index={0: "f_map", 1: "n_map"}).to_csv(ocsv)
+# Accuracy
+total_pixels = arr.sum()
+diagonal_sum = np.diag(arr).sum()
+overall_accuracy = diagonal_sum / total_pixels
+# Kappa
+row_totals = arr.sum(axis=1)
+col_totals = arr.sum(axis=0)
+pe = np.sum(row_totals * col_totals) / (total_pixels ** 2)
+kappa = (overall_accuracy - pe) / (1 - pe)
+(OA_tmf_gfc, K_tmf_gfc) = np.round((overall_accuracy, kappa), 3)
 
 # Table synthesizing the results
 data = {
     "source": ["amap", "gfc", "tmf"],
     "year": [2015, 2015, 2015],
-    "tc": ["", 60, ""],
+    "tc": ["", 65, ""],
     "forest_area": [forest_area_amap, forest_area_gfc, forest_area_tmf],
     "perc": [forest_perc_amap, forest_perc_gfc, forest_perc_tmf],
-    "OA": ["", OA_gfc, OA_tmf],
-    "Kappa": ["", K_gfc, K_tmf]
+    "OA (/amap)": ["", OA_gfc, OA_tmf],
+    "Kappa (/amap)": ["", K_gfc, K_tmf],
+    "OA (/gfc)": ["", "", OA_tmf_gfc],
+    "Kappa (/gfc)": ["", "", K_tmf_gfc],
 }
-ofile = Path("outputs", "comp_fc2015_amap_gfc_tmf.csv")
+ofile = out_dir / "comp_fc2015_amap_gfc_tmf.csv"
 df = pd.DataFrame(data).to_csv(ofile, index=False)
 
 # ========================================================

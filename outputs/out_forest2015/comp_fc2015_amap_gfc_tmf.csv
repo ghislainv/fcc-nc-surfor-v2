@@ -1,4 +1,4 @@
-source,year,tc,forest_area,perc,OA,Kappa
-amap,2015,,649331,39,,
-gfc,2015,60,714640,42,0.83,0.64
-tmf,2015,,675836,40,0.84,0.66
+source,year,tc,forest_area,perc,OA (/amap),Kappa (/amap),OA (/gfc),Kappa (/gfc)
+amap,2015,,649331,38.6,,,,
+gfc,2015,65,625840,37.2,0.838,0.656,,
+tmf,2015,,675836,40.1,0.839,0.662,0.874,0.734

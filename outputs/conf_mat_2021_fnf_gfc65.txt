@@ -1,0 +1,27 @@
+Confusion Matrix and Statistics
+
+           Reference
+Prediction  Forest NonForest
+  Forest      3511       581
+  NonForest   1013      3827
+                                          
+               Accuracy : 0.8215          
+                 95% CI : (0.8134, 0.8294)
+    No Information Rate : 0.5065          
+    P-Value [Acc > NIR] : < 2.2e-16       
+                                          
+                  Kappa : 0.6435          
+                                          
+ Mcnemar's Test P-Value : < 2.2e-16       
+                                          
+            Sensitivity : 0.7761          
+            Specificity : 0.8682          
+         Pos Pred Value : 0.8580          
+         Neg Pred Value : 0.7907          
+             Prevalence : 0.5065          
+         Detection Rate : 0.3931          
+   Detection Prevalence : 0.4581          
+      Balanced Accuracy : 0.8221          
+                                          
+       'Positive' Class : Forest          
+                                          

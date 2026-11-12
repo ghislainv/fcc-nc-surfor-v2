@@ -1,2 +1,9 @@
 ee
+numpy
+gdal
+geefcc
+matplotlib
 pandas
+rasterio
+requests
+
