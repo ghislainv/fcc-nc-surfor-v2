@@ -31,7 +31,7 @@ res = 30
 ogr.UseExceptions()
 
 # Reproject borders
-out_dir = Path("outputs", "out_forest2015")
+out_dir = Path("outputs", "4_val_for2015")
 gpkg_file = out_dir / "gadm-newcal" / "grande-terre.gpkg"
 gpkg_file_proj = out_dir / "gadm-newcal" / "grande-terre_utm58s.gpkg"
 gdal.VectorTranslate(

@@ -17,12 +17,21 @@ library(caret)  # Confusion matrices
 file_2004 <- "38354-samples_2000.csv"
 file_2008 <- "38356-samples_2010.csv"
 file_2021 <- "38355-samples_2021.csv"
-df_2004 <- read_csv(here("data_raw", file_2004), show_col_types=FALSE)
-df_2008 <- read_csv(here("data_raw", file_2008), show_col_types=FALSE)
+df_2004 <- read_csv(here("data_raw", file_2004), show_col_types=FALSE) |>
+  mutate(year=2004, dataset="change_0408")
+df_2008 <- read_csv(here("data_raw", file_2008), show_col_types=FALSE) |>
+  mutate(year=2008)
 df_2021 <- read_csv(here("data_raw", file_2021), show_col_types=FALSE) |>
-    mutate(plotid=plotid + 1000) |>
-    mutate(sampleid=sampleid + 16000)
+  mutate(plotid=plotid + 1000) |>
+  mutate(sampleid=sampleid + 16000) |>
+  mutate(year=2021, dataset="change_0821")
 
+# Add the period to observations in 2008 (the pivotal year including all plots)
+id_2004 <- paste(df_2004$plotid, df_2004$sampleid, sep="_")
+id_2008 <- paste(df_2008$plotid, df_2008$sampleid, sep="_")
+df_2008 <- df_2008 |>
+  mutate(dataset=ifelse(id_2008 %in% id_2004, "change_0408", "change_0821"))
+  
 # Function "format_data"
 format_data <- function(select_obs = FALSE) {
   if (select_obs == TRUE) {
@@ -30,8 +39,7 @@ format_data <- function(select_obs = FALSE) {
     # and select only pixels were both interpreters agree for 2008
     suffix <- "selobs"
     df_2004 <- df_2004 |>
-      filter(email != "stagiaire@oeil.nc") |>
-      mutate(date=2004)
+      filter(email != "stagiaire@oeil.nc")
     
     df_2008 <- df_2008 |>
       filter(email != "stagiaire@oeil.nc") |>
@@ -39,12 +47,10 @@ format_data <- function(select_obs = FALSE) {
       # Select only pixels were both remaining interpreters agree
       filter(n_distinct(Classification) == 1) |>
       slice(1) |>
-      ungroup() |>
-      mutate(date=2008)
+      ungroup()
     
     df_2021 <- df_2021 |>
-      filter(email != "stagiaire@oeil.nc") |>
-      mutate(date=2021)
+      filter(email != "stagiaire@oeil.nc")
     
   } else {
     suffix <- "allobs"
@@ -53,8 +59,7 @@ format_data <- function(select_obs = FALSE) {
       group_by(plotid, sampleid) |>
       # Select one observation at random
       slice_sample(n=1) |>
-      ungroup() |>
-      mutate(date=2004)
+      ungroup()
 
     df_2008 <- df_2008 |>
       group_by(plotid, sampleid) |>
@@ -66,31 +71,31 @@ format_data <- function(select_obs = FALSE) {
       # Majority of the observations per pixel
       filter(Classification == names(which.max(table(Classification)))) |>
       slice(1) |>
-      ungroup() |>
-      mutate(date=2008)
+      ungroup()
 
     df_2021 <- df_2021 |>
       group_by(plotid, sampleid) |>
       # Select one observation at random
       slice_sample(n=1) |>
-      ungroup() |>
-      mutate(date=2021)
+      ungroup()
   }
 
   # Combining datasets
   # Start with 2008 which is the central year and includes
   # all plots used for interpreting change.
   df_change <- df_2008 |>
-    left_join(df_2004, by=c("plotid", "sampleid"), suffix=c("", "_t1")) |>
-    mutate(dataset=if_else(date_t1 == "2004", "change_0408", NA, missing="change_0821")) |>
-    left_join(df_2021, by=c("plotid", "sampleid"), suffix=c("", "_t3")) |>
+    full_join(df_2004, by=c("plotid", "sampleid", "dataset"), suffix=c("", "_t1")) |>
+    full_join(df_2021, by=c("plotid", "sampleid", "dataset"), suffix=c("", "_t3")) |>
     rename(for2008=Classification) |>
     rename(for2004=Classification_t1) |>
     rename(for2021=Classification_t3) |>
+    rename(email2008=email) |>
+    rename(email2004=email_t1) |>
+    rename(email2021=email_t3) |>
     select(!ends_with("_t1")) |>
     select(!ends_with("_t3"))
 
-  # Get data on forest cover change
+  # Estimate forest cover change from forest cover at two dates
   df_change <- df_change |>
     # fcc_p1
     mutate(fcc_p1=ifelse(for2004=="Forêt" & for2008=="Forêt", "stableF", NA)) |>
@@ -110,6 +115,7 @@ format_data <- function(select_obs = FALSE) {
   df_for2021_fnf <- read_csv(here("data_raw", file_for2021_fnf), show_col_types=FALSE) |>
     select(-c(17:22)) |>
     mutate(dataset="for2021") |>
+    rename(email2021_fnf=email) |>
     group_by(plotid, sampleid) |>
     # Set "Non interprétable" if three different interpretations (in fact it is never the case)
     mutate(Commentaire = paste("agreement:", max(table(Classification)),
@@ -156,13 +162,13 @@ format_data <- function(select_obs = FALSE) {
   df_gee <- read_csv(here("data", glue("df_gee.csv")), show_col_types=FALSE) |>
     select(-lat, -lon)
   df_surfor_gee <- read_csv(here("data", glue("df_interp_{suffix}.csv")), show_col_types=FALSE) |>
-    left_join(df_gee, by=c("plotid", "sampleid", "dataset", "sample_internal_id"))
+    left_join(df_gee, by=c("plotid", "sampleid", "dataset"))
 
   # Select variables and write
   df_surfor_gee <- df_surfor_gee |>
     select(
-      plotid, sampleid, sample_internal_id, lon, lat, imagery_title,
-      email, dataset,
+      plotid, sampleid, dataset, lon, lat, imagery_title,
+      email2004, email2008, email2021, email2021_fnf,
       for2004, for2008, for2021,
       fcc_p1, fcc_p2, for2021_fnf,
       Dec2003, Dec2004, Dec2007, Dec2008, Dec2020, Dec2021,

@@ -1,3 +1,11 @@
+# Table Of Content
+# 1. Disagreement (disag)
+# 2. Best percentage for gfc (gfc_perc)
+# 3. Validation forest cover 2021 with photointerpretation (val_for2021_fnf)
+# 4. Validation forest cover 2015 with AMAP map (val_for2015)
+# 5. Validation forest cover 2004--2008--2021 with photointerpretation (val_for_2004_2008_2021)
+# 6. Validation forest cover change 2004--2008--2021 with photointerpretation (val_fcc_2004_2008_2021)
+
 # Libraries
 library(readr)
 library(glue)
@@ -8,12 +16,16 @@ library(ggplot2)
 library(sf)
 library(tidyr)
 
-# Output directory
-dir.create(here("outputs"), showWarnings=FALSE)
+# Output directories
+out_dir <- "outputs"
+dir.create(here(out_dir), showWarnings=FALSE)
 
 # ========================================================
-# Disagreement between interpreters
+# 1. Disagreement between interpreters
 # ========================================================
+
+subdir <- "1_disag"
+dir.create(here(out_dir, subdir), showWarnings=FALSE)
 
 # Formatting data
 # ---------------
@@ -52,7 +64,7 @@ df_disag <- df_2004 |>
 df_nobs_inter <- df_disag |>
   summarize(n=n(), .by=c(dataset, email)) |>
   pivot_wider(id_cols=email, names_from=dataset, values_from=n) |>
-  write_csv(here("outputs", "df_nobs_interpreter.csv"))
+  write_csv(here(out_dir, subdir, "df_nobs_interpreter.csv"))
   
 # Wide data
 data_wide <- df_disag |>
@@ -143,7 +155,7 @@ df_alpha[n_datasets + 1, 2:4] <- K_alpha
 # Combine raw disagreement and alpha
 df_disag_interpreters <- raw_disag |>
   left_join(df_alpha, by="dataset") |>
-  write_csv(here("outputs", "df_disag_interp.csv"))
+  write_csv(here(out_dir, subdir, "df_disag_interp.csv"))
 
 # Bad interpreter
 # ---------------
@@ -160,11 +172,14 @@ for (i in 1:3) {
   df_bad[i, "alpha_change"] <- K_change
 }
 df_bad |>
-  write_csv(here("outputs", "df_bad_interpreter.csv"))
+  write_csv(here(out_dir, subdir, "df_bad_interpreter.csv"))
 
 # ========================================================
-# Best percentage of tree cover for GFC based on year 2021
+# 2. Best percentage of tree cover for GFC based on year 2021
 # ========================================================
+
+subdir <- "2_gfc_perc"
+dir.create(here(out_dir, subdir), showWarnings=FALSE)
 
 # Load data
 # NB: no change betwenn selobs and allobs for forest2021_fnf
@@ -187,7 +202,7 @@ for (i in 1:length(perc)) {
 }
 
 # Save results
-mat_acc |> write_csv(here("outputs", "mat_accuracy_gfc_perc.csv"))
+mat_acc |> write_csv(here(out_dir, subdir, "mat_accuracy_gfc_perc.csv"))
 
 # Which perc
 gfc_acc <- mat_acc$acc[which.max(mat_acc$acc)]
@@ -207,9 +222,16 @@ p <- mat_acc |>
     panel.border = element_blank(),  # Supprime le cadre complet de la zone de tracé
     axis.line = element_line(color = "black") # Ajoute explicitement les lignes X et Y
   )
-ggsave(here("outputs", "plot_accuracy_gfc_perc.pdf"))
+ggsave(here(out_dir, subdir, "plot_accuracy_gfc_perc.pdf"))
 
-# Confusion matrix for best percentage
+# ========================================================
+# 3. Validation forest cover 2021 with photointerpretation
+# ========================================================
+
+subdir <- "3_val_for2021_fnf"
+dir.create(here(out_dir, subdir), showWarnings=FALSE)
+
+# GFC65
 for2021_pred_gfc <- ifelse((df$treecover2000 >= gfc_perc) & !(df$lossyear %in% c(1:20)),
                            "Forest", "NonForest")
 df_cm <- data.frame(
@@ -219,15 +241,13 @@ df_cm <- na.omit(df_cm)
 conf_mat <- caret::confusionMatrix(
   data=df_cm$pred,
   reference=df_cm$obs)
+
 # Save results
-sink(here("outputs", "conf_mat_2021_fnf_gfc65.txt"))
+sink(here(out_dir, subdir, "conf_mat_2021_fnf_gfc65.txt"))
 conf_mat
 sink()
 
-# ========================================================
 # TMF fnf 2021
-# ========================================================
-
 for2021_pred_tmf <- ifelse(df$Dec2020 %in% c(1, 2, 4), "Forest", "NonForest")
 df_cm <- data.frame(
   obs=as.factor(df$for2021_fnf),
@@ -239,7 +259,7 @@ conf_mat <- caret::confusionMatrix(
 tmf_acc <- as.numeric(conf_mat$overall["Accuracy"])
 
 # Save results
-sink(here("outputs", "conf_mat_2021_fnf_tmf.txt"))
+sink(here(out_dir, subdir, "conf_mat_2021_fnf_tmf.txt"))
 conf_mat
 sink()
 
@@ -249,172 +269,221 @@ comp_gfc_tmf_fnf2021 <- data.frame(
   perc=c(gfc_perc, NA),
   year=rep(2021, 2),
   acc=sapply(c(gfc_acc, tmf_acc), round, digits=3)) |>
-  write_csv(here("outputs", "comp_gfc_tmf_fnf2021.csv"))
+  write_csv(here(out_dir, subdir, "comp_gfc_tmf_fnf2021.csv"))
 
 # ========================================================
-# Comparison with AMAP map (~2015)
+# 4. Comparison with AMAP map (~2015)
 # ========================================================
 
 # See python script comparing_amap_gfc_tmf_maps.py
 
-# ========================================================
-# Confusion matrix for forest cover in 2004, 2008 and 2021
-# ========================================================
+# ========================================================================
+# 5. Validation forest cover 2004--2008--2021 with photointerpretation
+# ========================================================================
 
-# Load data
-select_obs <- TRUE
-suffix <- ifelse(select_obs, "selobs", "allobs")
-df <- read_csv(here("data", glue("df_surfor_{suffix}.csv")), show_col_types=FALSE)
+subdir <- "5_val_for_2004_2008_2021"
+dir.create(here(out_dir, subdir), showWarnings=FALSE)
 
-# Predicted forest from GFC (considering tree cover >= 65%)
-df_cm <- df |>
-  mutate(for2004_pred_gfc_65=ifelse((treecover2000 >= 65) & !(lossyear %in% c(1:3)), "Forest", "NonForest")) |> # 3 for forest at end of year 2003
-  mutate(for2008_pred_gfc_65=ifelse((treecover2000 >= 65) & !(lossyear %in% c(1:7)), "Forest", "NonForest")) |> # 7 for forest at end of year 2007
-  mutate(for2021_pred_gfc_65=ifelse((treecover2000 >= 65) & !(lossyear %in% c(1:20)), "Forest", "NonForest"))  # 20 for forest at end of year 2020
+val_for_fcc <- function(obs_suffix = "allobs") {
 
-# Predicted forest from TMF
-df_cm <- df_cm |>
-  mutate(for2004_pred_tmf=ifelse(Dec2003 %in% c(1, 2, 4), "Forest", "NonForest")) |>
-  mutate(for2008_pred_tmf=ifelse(Dec2007 %in% c(1, 2, 4), "Forest", "NonForest")) |>
-  mutate(for2021_pred_tmf=ifelse(Dec2020 %in% c(1, 2, 4), "Forest", "NonForest"))
+  # Load data
+  suffix <- obs_suffix
+  df <- read_csv(here("data", glue("df_surfor_{suffix}.csv")), show_col_types=FALSE)
 
-# Variables
-years <- c(2004, 2008, 2021)
-nyears <- length(years)
-maps <- c("gfc_65", "tmf")
-nmaps <- length(maps)
+  # Predicted forest from GFC (considering tree cover >= 65%)
+  df_cm <- df |>
+    # 3 for forest at end of year 2003
+    mutate(for2004_pred_gfc_65=ifelse((treecover2000 >= 65) & !(lossyear %in% c(1:3)), "Forest", "NonForest")) |>
+    # 7 for forest at end of year 2007
+    mutate(for2008_pred_gfc_65=ifelse((treecover2000 >= 65) & !(lossyear %in% c(1:7)), "Forest", "NonForest")) |>
+    # 20 for forest at end of year 2020
+    mutate(for2021_pred_gfc_65=ifelse((treecover2000 >= 65) & !(lossyear %in% c(1:20)), "Forest", "NonForest"))
 
-# Data-frame to store results
-df_res <- data.frame(
-  years=rep(years, nmaps),
-  maps=rep(maps, each=nyears),
-  ff=NA, fnf=NA, nff=NA, nfnf=NA, n_f=NA, n_nf=NA,
-  oa=NA, sen=NA, spe=NA, kappa=NA)
+  # Predicted forest from TMF
+  df_cm <- df_cm |>
+    mutate(for2004_pred_tmf=ifelse(Dec2003 %in% c(1, 2, 4), "Forest", "NonForest")) |>
+    mutate(for2008_pred_tmf=ifelse(Dec2007 %in% c(1, 2, 4), "Forest", "NonForest")) |>
+    mutate(for2021_pred_tmf=ifelse(Dec2020 %in% c(1, 2, 4), "Forest", "NonForest"))
 
-# Loops
-for (i in 1:nmaps) {
-  for (j in 1:nyears) {  
-    cmat <- df_cm |>
-      mutate(obs=as.factor(.data[[paste0("for", years[j])]])) |>
-      mutate(pred=as.factor(.data[[paste0("for", years[j], "_pred_", maps[i])]])) |>
-      select(obs, pred) |>
-      na.omit()
-    conf_mat <- caret::confusionMatrix(
-      data=cmat$pred,
-      reference=cmat$obs)
-    w <- which(df_res$years==years[j] & df_res$maps==maps[i])
-    df_res$oa[w] <- conf_mat$overall["Accuracy"]
-    df_res$kappa[w] <- conf_mat$overall["Kappa"]
-    df_res$sen[w] <- conf_mat$byClass["Sensitivity"]
-    df_res$spe[w] <- conf_mat$byClass["Specificity"]
-    df_res$ff[w] <- conf_mat$table[1, 1]
-    df_res$fnf[w] <- conf_mat$table[2, 1]
-    df_res$nff[w] <- conf_mat$table[1, 2]
-    df_res$nfnf[w] <- conf_mat$table[2, 2]
+  # Variables
+  years <- c(2004, 2008, 2021)
+  nyears <- length(years)
+  maps <- c("gfc_65", "tmf")
+  nmaps <- length(maps)
+
+  # Data-frame to store results
+  df_res <- data.frame(
+    years=rep(years, nmaps),
+    maps=rep(maps, each=nyears),
+    ff=NA, fnf=NA, nff=NA, nfnf=NA, n_f=NA, n_nf=NA,
+    oa=NA, sen=NA, spe=NA, kappa=NA)
+
+  # Loops
+  for (i in 1:nmaps) {
+    for (j in 1:nyears) {  
+      cmat <- df_cm |>
+        mutate(obs=as.factor(.data[[paste0("for", years[j])]])) |>
+        mutate(pred=as.factor(.data[[paste0("for", years[j], "_pred_", maps[i])]])) |>
+        select(obs, pred) |>
+        na.omit()
+      conf_mat <- caret::confusionMatrix(
+        data=cmat$pred,
+        reference=cmat$obs)
+      w <- which(df_res$years==years[j] & df_res$maps==maps[i])
+      df_res$oa[w] <- conf_mat$overall["Accuracy"]
+      df_res$kappa[w] <- conf_mat$overall["Kappa"]
+      df_res$sen[w] <- conf_mat$byClass["Sensitivity"]
+      df_res$spe[w] <- conf_mat$byClass["Specificity"]
+      df_res$ff[w] <- conf_mat$table[1, 1]
+      df_res$fnf[w] <- conf_mat$table[2, 1]
+      df_res$nff[w] <- conf_mat$table[1, 2]
+      df_res$nfnf[w] <- conf_mat$table[2, 2]
+    }
   }
+
+  # Save
+  df_res <- df_res |>
+    mutate(n_f = ff + fnf, n_nf = nfnf + nff) |>
+    mutate(across(c(oa, sen, spe, kappa), ~ round(.x, 3))) |>
+    arrange(years) |>
+    write_csv(here(out_dir, subdir, glue("conf_mat_forest_cover_2004_2008_2021_{suffix}.csv")))
+
+  # Much lower OA for forest/non-forest classification (~0.70). Much of the forest is classified as non-forest by the two products.
+
 }
 
-# Save
-df_res <- df_res |>
-  mutate(n_f = ff + fnf, n_nf = nfnf + nff) |>
-  mutate(across(c(oa, sen, spe, kappa), ~ round(.x, 3))) |>
-  arrange(years) |>
-  write_csv(here("outputs", glue("conf_mat_forest_cover_2004_2008_2021_{suffix}.csv")))
-
-# Much lower OA for forest/non-forest classification (~0.70). Much of the forest is classified as non-forest by the two products.
-
-# =====================================================================
-# Confusion matrix for forest cover change in 2004--2008 and 2008--2021
-# =====================================================================
-
-# Predicted change from GFC (considering tree cover >= 60%)
-df_fcc <- df_cm |>
-  # p1
-  mutate(fcc_p1_gfc_65=ifelse(for2004_pred_gfc_65=="Forest" &
-                                for2008_pred_gfc_65=="Forest", "stableF", NA)) |>
-  mutate(fcc_p1_gfc_65=ifelse(for2004_pred_gfc_65=="Forest" &
-                                for2008_pred_gfc_65=="NonForest", "loss", fcc_p1_gfc_65)) |>
-  mutate(fcc_p1_gfc_65=ifelse(for2004_pred_gfc_65=="NonForest" &
-                                for2008_pred_gfc_65=="Forest", "gain", fcc_p1_gfc_65)) |>
-  mutate(fcc_p1_gfc_65=ifelse(for2004_pred_gfc_65=="NonForest" &
-                                for2008_pred_gfc_65=="NonForest", "stableNF", fcc_p1_gfc_65)) |>
-  # p2
-  mutate(fcc_p2_gfc_65=ifelse(for2008_pred_gfc_65=="Forest" &
-                                for2021_pred_gfc_65=="Forest", "stableF", NA)) |>
-  mutate(fcc_p2_gfc_65=ifelse(for2008_pred_gfc_65=="Forest" &
-                                for2021_pred_gfc_65=="NonForest", "loss", fcc_p2_gfc_65)) |>
-  mutate(fcc_p2_gfc_65=ifelse(for2008_pred_gfc_65=="NonForest" &
-                                for2021_pred_gfc_65=="Forest", "gain", fcc_p2_gfc_65)) |>
-  mutate(fcc_p2_gfc_65=ifelse(for2008_pred_gfc_65=="NonForest" &
-                                for2021_pred_gfc_65=="NonForest", "stableNF", fcc_p2_gfc_65))
-
-# Predicted change from TMF
-df_fcc <- df_fcc |>
-  # p1
-  mutate(fcc_p1_tmf=ifelse(for2004_pred_tmf=="Forest" &
-                                for2008_pred_tmf=="Forest", "stableF", NA)) |>
-  mutate(fcc_p1_tmf=ifelse(for2004_pred_tmf=="Forest" &
-                                for2008_pred_tmf=="NonForest", "loss", fcc_p1_tmf)) |>
-  mutate(fcc_p1_tmf=ifelse(for2004_pred_tmf=="NonForest" &
-                                for2008_pred_tmf=="Forest", "gain", fcc_p1_tmf)) |>
-  mutate(fcc_p1_tmf=ifelse(for2004_pred_tmf=="NonForest" &
-                                for2008_pred_tmf=="NonForest", "stableNF", fcc_p1_tmf)) |>
-  # p2
-  mutate(fcc_p2_tmf=ifelse(for2008_pred_tmf=="Forest" &
-                                for2021_pred_tmf=="Forest", "stableF", NA)) |>
-  mutate(fcc_p2_tmf=ifelse(for2008_pred_tmf=="Forest" &
-                                for2021_pred_tmf=="NonForest", "loss", fcc_p2_tmf)) |>
-  mutate(fcc_p2_tmf=ifelse(for2008_pred_tmf=="NonForest" &
-                                for2021_pred_tmf=="Forest", "gain", fcc_p2_tmf)) |>
-  mutate(fcc_p2_tmf=ifelse(for2008_pred_tmf=="NonForest" &
-                                for2021_pred_tmf=="NonForest", "stableNF", fcc_p2_tmf))
-
-# Variables
-periods <- c("p1", "p2")
-n_periods <- length(periods)
-maps <- c("gfc_65", "tmf")
-n_maps <- length(maps)
-fcc_classes <- c("gain", "loss", "stableF", "stableNF")
-
-# Data-frame to store results
-df_freq <- data.frame()
-df_acc <- data.frame(
-  periods=rep(periods, n_maps),
-  maps=rep(maps, each=n_periods),
-  sen_gain=NA, spe_gain=NA,
-  sen_loss=NA, spe_loss=NA)
-
-# Loops
-for (i in 1:n_maps) {
-  for (j in 1:n_periods) {
-    # Confusion matrix
-    cmat <- df_fcc |>
-      mutate(obs=factor(.data[[paste0("fcc_", periods[j])]], levels=fcc_classes)) |>
-      mutate(pred=factor(.data[[paste0("fcc_", periods[j], "_", maps[i])]],
-                         levels=fcc_classes)) |>
-      select(obs, pred) |>
-      na.omit()
-    conf_mat <- caret::confusionMatrix(
-      data=cmat$pred,
-      reference=cmat$obs)
-    # Frequencies
-    tab <- data.frame(as.matrix(conf_mat))
-    tab$map <- maps[i]
-    tab$period <- periods[j]
-    df_freq <- df_freq |> bind_rows(tab)
-    # Accuracy indices
-    w <- which(df_acc$periods==periods[j] & df_acc$maps==maps[i])
-    df_acc$sen_gain[w] <- conf_mat$byClass["Class: gain", "Sensitivity"]
-    df_acc$spe_gain[w] <- conf_mat$byClass["Class: gain", "Specificity"]
-    df_acc$sen_loss[w] <- conf_mat$byClass["Class: loss", "Sensitivity"]
-    df_acc$spe_loss[w] <- conf_mat$byClass["Class: loss", "Specificity"]
-  }
+# Loop on datasets
+obs_suffix <- c("selobs", "allobs")
+n_suffix <- length(obs_suffix)
+for (i in 1:n_suffix) {
+ val_for_fcc(obs_suffix[i]) 
 }
 
-# Save
-df_freq |> write.csv(here("outputs", glue("conf_mat_fcc_{suffix}.csv")), row.names=TRUE)
-df_acc <- df_acc |>
-  mutate(across(c("sen_gain", "spe_gain", "sen_loss", "spe_loss"), ~ round(.x, 3))) |>
-  write_csv(here("outputs", glue("accurracy_fcc_{suffix}.csv")))
+# ====================================================================================================
+# 6. Validation forest cover change 2004--2008--2021 with photointerpretation (val_fcc_2004_2008_2021)
+# ====================================================================================================
+
+subdir <- "6_val_fcc_2004_2008_2021"
+dir.create(here(out_dir, subdir), showWarnings=FALSE)
+
+val_fcc <- function(obs_suffix = "allobs") {
+
+  # Load data
+  suffix <- obs_suffix
+  df <- read_csv(here("data", glue("df_surfor_{suffix}.csv")), show_col_types=FALSE)
+
+  # Predicted forest from GFC (considering tree cover >= 65%)
+  df_cm <- df |>
+    # 3 for forest at end of year 2003
+    mutate(for2004_pred_gfc_65=ifelse((treecover2000 >= 65) & !(lossyear %in% c(1:3)), "Forest", "NonForest")) |>
+    # 7 for forest at end of year 2007
+    mutate(for2008_pred_gfc_65=ifelse((treecover2000 >= 65) & !(lossyear %in% c(1:7)), "Forest", "NonForest")) |>
+    # 20 for forest at end of year 2020
+    mutate(for2021_pred_gfc_65=ifelse((treecover2000 >= 65) & !(lossyear %in% c(1:20)), "Forest", "NonForest"))
+
+  # Predicted forest from TMF
+  df_cm <- df_cm |>
+    mutate(for2004_pred_tmf=ifelse(Dec2003 %in% c(1, 2, 4), "Forest", "NonForest")) |>
+    mutate(for2008_pred_tmf=ifelse(Dec2007 %in% c(1, 2, 4), "Forest", "NonForest")) |>
+    mutate(for2021_pred_tmf=ifelse(Dec2020 %in% c(1, 2, 4), "Forest", "NonForest"))
+
+  # Predicted change from GFC (considering tree cover >= 60%)
+  df_fcc <- df_cm |>
+    # p1
+    mutate(fcc_p1_gfc_65=ifelse(for2004_pred_gfc_65=="Forest" &
+                                  for2008_pred_gfc_65=="Forest", "stableF", NA)) |>
+    mutate(fcc_p1_gfc_65=ifelse(for2004_pred_gfc_65=="Forest" &
+                                  for2008_pred_gfc_65=="NonForest", "loss", fcc_p1_gfc_65)) |>
+    mutate(fcc_p1_gfc_65=ifelse(for2004_pred_gfc_65=="NonForest" &
+                                  for2008_pred_gfc_65=="Forest", "gain", fcc_p1_gfc_65)) |>
+    mutate(fcc_p1_gfc_65=ifelse(for2004_pred_gfc_65=="NonForest" &
+                                  for2008_pred_gfc_65=="NonForest", "stableNF", fcc_p1_gfc_65)) |>
+    # p2
+    mutate(fcc_p2_gfc_65=ifelse(for2008_pred_gfc_65=="Forest" &
+                                  for2021_pred_gfc_65=="Forest", "stableF", NA)) |>
+    mutate(fcc_p2_gfc_65=ifelse(for2008_pred_gfc_65=="Forest" &
+                                  for2021_pred_gfc_65=="NonForest", "loss", fcc_p2_gfc_65)) |>
+    mutate(fcc_p2_gfc_65=ifelse(for2008_pred_gfc_65=="NonForest" &
+                                  for2021_pred_gfc_65=="Forest", "gain", fcc_p2_gfc_65)) |>
+    mutate(fcc_p2_gfc_65=ifelse(for2008_pred_gfc_65=="NonForest" &
+                                  for2021_pred_gfc_65=="NonForest", "stableNF", fcc_p2_gfc_65))
+
+  # Predicted change from TMF
+  df_fcc <- df_fcc |>
+    # p1
+    mutate(fcc_p1_tmf=ifelse(for2004_pred_tmf=="Forest" &
+                               for2008_pred_tmf=="Forest", "stableF", NA)) |>
+    mutate(fcc_p1_tmf=ifelse(for2004_pred_tmf=="Forest" &
+                               for2008_pred_tmf=="NonForest", "loss", fcc_p1_tmf)) |>
+    mutate(fcc_p1_tmf=ifelse(for2004_pred_tmf=="NonForest" &
+                               for2008_pred_tmf=="Forest", "gain", fcc_p1_tmf)) |>
+    mutate(fcc_p1_tmf=ifelse(for2004_pred_tmf=="NonForest" &
+                               for2008_pred_tmf=="NonForest", "stableNF", fcc_p1_tmf)) |>
+    # p2
+    mutate(fcc_p2_tmf=ifelse(for2008_pred_tmf=="Forest" &
+                               for2021_pred_tmf=="Forest", "stableF", NA)) |>
+    mutate(fcc_p2_tmf=ifelse(for2008_pred_tmf=="Forest" &
+                               for2021_pred_tmf=="NonForest", "loss", fcc_p2_tmf)) |>
+    mutate(fcc_p2_tmf=ifelse(for2008_pred_tmf=="NonForest" &
+                               for2021_pred_tmf=="Forest", "gain", fcc_p2_tmf)) |>
+    mutate(fcc_p2_tmf=ifelse(for2008_pred_tmf=="NonForest" &
+                               for2021_pred_tmf=="NonForest", "stableNF", fcc_p2_tmf))
+
+  # Variables
+  periods <- c("p1", "p2")
+  n_periods <- length(periods)
+  maps <- c("gfc_65", "tmf")
+  n_maps <- length(maps)
+  fcc_classes <- c("gain", "loss", "stableF", "stableNF")
+
+  # Data-frame to store results
+  df_freq <- data.frame()
+  df_acc <- data.frame(
+    periods=rep(periods, n_maps),
+    maps=rep(maps, each=n_periods),
+    sen_gain=NA, spe_gain=NA,
+    sen_loss=NA, spe_loss=NA)
+
+  # Loops
+  for (i in 1:n_maps) {
+    for (j in 1:n_periods) {
+      # Confusion matrix
+      cmat <- df_fcc |>
+        mutate(obs=factor(.data[[paste0("fcc_", periods[j])]], levels=fcc_classes)) |>
+        mutate(pred=factor(.data[[paste0("fcc_", periods[j], "_", maps[i])]],
+                           levels=fcc_classes)) |>
+        select(obs, pred) |>
+        na.omit()
+      conf_mat <- caret::confusionMatrix(
+        data=cmat$pred,
+        reference=cmat$obs)
+      # Frequencies
+      tab <- data.frame(as.matrix(conf_mat))
+      tab$map <- maps[i]
+      tab$period <- periods[j]
+      df_freq <- df_freq |> bind_rows(tab)
+      # Accuracy indices
+      w <- which(df_acc$periods==periods[j] & df_acc$maps==maps[i])
+      df_acc$sen_gain[w] <- conf_mat$byClass["Class: gain", "Sensitivity"]
+      df_acc$spe_gain[w] <- conf_mat$byClass["Class: gain", "Specificity"]
+      df_acc$sen_loss[w] <- conf_mat$byClass["Class: loss", "Sensitivity"]
+      df_acc$spe_loss[w] <- conf_mat$byClass["Class: loss", "Specificity"]
+    }
+  }
+
+  # Save
+  df_freq |> write.csv(here(out_dir, subdir, glue("conf_mat_fcc_{suffix}.csv")), row.names=TRUE)
+  df_acc <- df_acc |>
+    mutate(across(c("sen_gain", "spe_gain", "sen_loss", "spe_loss"), ~ round(.x, 3))) |>
+    write_csv(here(out_dir, subdir, glue("accurracy_fcc_{suffix}.csv")))
+
+}
+
+# Loop on datasets
+obs_suffix <- c("selobs", "allobs")
+n_suffix <- length(obs_suffix)
+for (i in 1:n_suffix) {
+ val_fcc(obs_suffix[i]) 
+}
 
 # End

@@ -1,10 +1,10 @@
-outputs/out_forest2015/*
-!outputs/out_forest2015/comp_fc2015_amap_gfc_tmf.csv
-!outputs/out_forest2015/tmf/
-outputs/out_forest2015/tmf/*
-!outputs/out_forest2015/tmf/comp_amap_tmf.png
-outputs/fcc-map-2015-2025-newcal
-outputs/fragmentation
+outputs/4_val_for2015/*
+!outputs/4_val_for2015/comp_fc2015_amap_gfc_tmf.csv
+!outputs/4_val_for2015/tmf/
+outputs/4_val_for2015/tmf/*
+!outputs/4_val_for2015/tmf/comp_amap_tmf.png
+outputs/7_fcc_map_2015_2025_newcal
+outputs/8_forest_fragmentation
 article/figures
 article/article.pdf
 

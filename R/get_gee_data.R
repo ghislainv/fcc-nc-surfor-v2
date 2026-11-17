@@ -15,37 +15,42 @@ library(here)
 file_2004 <- "38354-samples_2000.csv"
 file_2008 <- "38356-samples_2010.csv"
 file_2021 <- "38355-samples_2021.csv"
-df_2004 <- read_csv(here("data_raw", file_2004), show_col_types=FALSE)
-df_2008 <- read_csv(here("data_raw", file_2008), show_col_types=FALSE)
+df_2004 <- read_csv(here("data_raw", file_2004), show_col_types=FALSE) |>
+  mutate(year=2004, dataset="change_0408")
+df_2008 <- read_csv(here("data_raw", file_2008), show_col_types=FALSE) |>
+  mutate(year=2008)
 df_2021 <- read_csv(here("data_raw", file_2021), show_col_types=FALSE) |>
-    mutate(plotid=plotid + 1000) |>
-    mutate(sampleid=sampleid + 16000)
+  mutate(plotid=plotid + 1000) |>
+  mutate(sampleid=sampleid + 16000) |>
+  mutate(year=2021, dataset="change_0821")
+
+# Add the period to observations in 2008 (the pivotal year including all plots)
+id_2004 <- paste(df_2004$plotid, df_2004$sampleid, sep="_")
+id_2008 <- paste(df_2008$plotid, df_2008$sampleid, sep="_")
+df_2008 <- df_2008 |>
+  mutate(dataset=ifelse(id_2008 %in% id_2004, "change_0408", "change_0821"))
 
 df_2004 <- df_2004 |>
   group_by(plotid, sampleid) |>
   # Select one observation
   slice(1) |>
-  ungroup() |>
-  mutate(date=2004)
+  ungroup()
 
 df_2008 <- df_2008 |>
   group_by(plotid, sampleid) |>
   slice(1) |>
-  ungroup() |>
-  mutate(date=2008)
+  ungroup()
 
 df_2021 <- df_2021 |>
   group_by(plotid, sampleid) |>
   slice(1) |>
-  ungroup() |>
-  mutate(date=2021)
+  ungroup()
 
 # Combining datasets
 # Start with 2008 which is the central year and includes
 # all plots used for interpreting change.
 df_change <- df_2008 |>
   left_join(df_2004, by=c("plotid", "sampleid"), suffix=c("", "_t1")) |>
-  mutate(dataset=if_else(date_t1 == "2004", "change_0408", NA, missing="change_0821")) |>
   left_join(df_2021, by=c("plotid", "sampleid"), suffix=c("", "_t3")) |>
   mutate(collection_time=as.character(collection_time))
 
