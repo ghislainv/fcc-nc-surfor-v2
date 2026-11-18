@@ -7,7 +7,10 @@ import subprocess
 import numpy as np
 import rasterio
 from osgeo import gdal
+import geopandas as gpd
 import matplotlib.pyplot as plt
+from matplotlib.colors import ListedColormap
+from matplotlib.patches import Patch
 
 # Project directory
 proj_dir = Path.cwd().parent
@@ -171,26 +174,142 @@ tools.r_mapcalc(
 
 # Find the patches (connected components)
 # r.clump: groups adjacent cells into patches
-tools.r_clump(
-    input="forest_mask",
-    output="patches",
-    overwrite=True
+# By default, the resulting clumps are connected only by their four direct neighbors
+# (left, right, top, bottom). The -d flag activates also diagonal clump tracing.
+for i in ["4n", "8n"]:
+    diag = "d" if i == "8n" else None
+    tools.r_clump(
+        input="forest_mask",
+        output=f"patches_{i}",
+        flags=diag,
+        overwrite=True,
+    )
+
+    # Calculate statistics per patch
+    # r.report (statistics per category)
+    rapport = tools.r_report(map=f"patches_{i}", units="meters", flags="h")
+
+    # Export to an attribute table
+    tools.r_to_vect(input=f"patches_{i}", output=f"patches_vect_{i}", type="area")
+    tools.v_to_db(map=f"patches_vect_{i}", option="area", columns="area_ha",
+                  unit="hectares")
+    tools.v_to_db(map=f"patches_vect_{i}", option="compact", columns="compact")
+    tools.v_to_db(map=f"patches_vect_{i}", option="fd", columns="fd")
+    tools.v_to_db(map=f"patches_vect_{i}", option="perimeter", columns="perimeter",
+                  unit="kilometers")
+    ofile = out_dir / f"forest_frag_patches_{i}.csv"
+    tools.db_out_ogr(input=f"patches_vect_{i}", output=ofile, format="CSV", overwrite=True)
+
+    # Note: with 8n, the number of features (polygons) is the same,
+    # but the values (categories) are changing.
+
+# =======================
+# GeoTIFF and plot
+# =======================
+
+min_ha = 0.5
+tif_all = out_dir / "patches_4n.tif"
+tif_min = out_dir / f"patches_4n_min{min_ha}ha.tif"
+
+# Export the full patch raster (before filtering)
+tools.r_out_gdal(
+    input="patches_4n",
+    output=tif_all,
+    format="GTiff",
+    type="Int32",
+    createopt="COMPRESS=LZW",
+    nodata=0,
+    overwrite=True,
 )
 
-# Calculate statistics per patch
-# r.report (statistics per category)
-rapport = tools.r_report(map="patches", units="meters", flags="h")
-print(rapport)
+# Remove patches smaller than 0.5 ha
+tools.r_reclass_area(
+    input="patches_4n",
+    output="patches_4n_min",
+    value=min_ha,
+    flags="c",  # input raster already clumped
+    mode="greater",
+    overwrite=True,
+)
+# r.reclass.area creates a virtual reclass raster: materialize it
+tools.r_mapcalc(expression="patches_4n_clean = patches_4n_min", overwrite=True)
 
-# Export to an attribute table
-tools.r_to_vect(input="patches", output="patches_vect", type="area")
-tools.v_to_db(map="patches_vect", option="area", columns="area_ha",
-              unit="hectares")
-tools.v_to_db(map="patches_vect", option="compact", columns="compact")
-tools.v_to_db(map="patches_vect", option="fd", columns="fd")
-tools.v_to_db(map="patches_vect", option="perimeter", columns="perimeter",
-              unit="kilometers")
-ofile = out_dir / "forest_frag_patches.csv"
-tools.db_out_ogr(input="patches_vect", output=ofile, format="CSV")
+# Export the filtered raster (used for the plot)
+tools.r_out_gdal(
+    input="patches_4n_clean",
+    output=tif_min,
+    format="GTiff",
+    type="Int32",
+    createopt="COMPRESS=LZW",
+    nodata=0,
+    overwrite=True,
+)
 
+# Read the filtered raster
+with rasterio.open(tif_min) as src:
+    data = src.read(1)
+    extent = (src.bounds.left, src.bounds.right, src.bounds.bottom, src.bounds.top)
+    raster_crs = src.crs
+    pixel_area_ha = abs(src.res[0] * src.res[1]) / 10_000  # assumes a projected CRS in meters
+
+# Patch areas (hectares) from pixel counts; index = patch ID
+counts = np.bincount(data.ravel())
+counts[0] = 0  # ignore background / nodata
+ids = np.nonzero(counts)[0]
+areas_ha = counts[ids] * pixel_area_ha
+
+# Select the 10 largest patches
+order = np.argsort(areas_ha)[::-1]
+top_ids = ids[order[:10]]
+top_areas = areas_ha[order[:10]]
+
+# Colors: pastel random colors for all patches (kept light so they do not compete)
+rng = np.random.default_rng(42)
+colors = 0.6 + 0.4 * rng.random((len(ids), 3))
+
+# Strongly distinct colors for the 10 largest patches
+top_colors = plt.get_cmap("tab10")(np.arange(10))[:, :3]
+id_to_index = {pid: k for k, pid in enumerate(ids)}
+for pid, col in zip(top_ids, top_colors):
+    colors[id_to_index[pid]] = col
+
+# Remap patch IDs to consecutive indices 1..N (0 reserved for background)
+lut = np.zeros(ids.max() + 1, dtype=np.int32)
+lut[ids] = np.arange(1, len(ids) + 1)
+idx = lut[data]
+
+# Colormap: white background + patch colors
+cmap = ListedColormap(np.vstack([[1, 1, 1], colors]))
+
+# New Caledonia borders, reprojected to the raster CRS
+ifile = proj_dir / "gisdata/ncl_borders/borders_NCL.gpkg"
+borders = gpd.read_file(ifile).to_crs(raster_crs)
+
+# Subsample for display only (stats and top-10 selection use the full raster)
+step = 4
+idx_plot = idx[::step, ::step]
+
+# Plot
+fig, ax = plt.subplots(figsize=(10, 10))
+ax.imshow(idx_plot, cmap=cmap, interpolation="nearest", extent=extent)
+borders.boundary.plot(ax=ax, color="black", linewidth=0.8)
+
+# Keep the view on the raster extent
+ax.set_xlim(extent[0], extent[1])
+ax.set_ylim(extent[2], extent[3])
+
+# Legend for the 10 largest patches
+top_pid = [i + 1 for i in range(10)]
+handles = [
+    Patch(facecolor=col, edgecolor="none", label=f"Patch {pid}: {area:,.0f} ha")
+    for pid, col, area in zip(top_pid, top_colors, top_areas)
+]
+ax.legend(handles=handles, title="10 largest patches", loc="lower left",
+          fontsize=8, frameon=True)
+
+ax.set_title(f"Forest patches (4-neighbors, ≥ {min_ha} ha): {len(ids)} patches")
+ax.set_axis_off()
+plt.savefig(out_dir / "patches_4n.png", dpi=200, bbox_inches="tight")
+plt.close()
+    
 # End

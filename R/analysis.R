@@ -17,6 +17,7 @@ library(caret)  # Confusion matrices
 library(ggplot2)
 library(sf)
 library(tidyr)
+library(tibble)
 
 # Output directories
 out_dir <- "outputs"
@@ -501,5 +502,107 @@ for (i in 1:n_suffix) {
 # ==================================================
 
 # See python script forest_frag_2025.py
+
+subdir <- "8_forest_fragmentation_2025"
+dir.create(here(out_dir, subdir), showWarnings=FALSE)
+
+# Load data
+df_patches <- read_csv(here("outputs", "8_forest_fragmentation_2025", "forest_frag_patches_4n.csv"))
+
+# Statistics
+patch_stats_all <- df_patches |>
+  summarise(
+    n          = n(),
+    area_total = sum(area_ha),
+    area_mean  = mean(area_ha),
+    area_sd    = sd(area_ha),
+    area_min   = min(area_ha),
+    q05        = quantile(area_ha, 0.05),
+    q25        = quantile(area_ha, 0.25),
+    area_med   = median(area_ha),
+    q75        = quantile(area_ha, 0.75),
+    q90        = quantile(area_ha, 0.90),
+    q95        = quantile(area_ha, 0.95),
+    q99        = quantile(area_ha, 0.99),
+    area_max   = max(area_ha)
+  ) |>
+  mutate(across(everything(), ~ round(.x, 2))) |>
+  pivot_longer(everything(), names_to = "variable", values_to = "value")
+
+write_csv(patch_stats_all, here("outputs", subdir, "forest_frag_patch_stats_all.csv"))
+
+patch_stats <- df_patches |>
+  filter(area_ha >= 0.5) |>
+  summarise(
+    n          = n(),
+    area_total = sum(area_ha),
+    area_mean  = mean(area_ha),
+    area_sd    = sd(area_ha),
+    area_min   = min(area_ha),
+    q05        = quantile(area_ha, 0.05),
+    q25        = quantile(area_ha, 0.25),
+    area_med   = median(area_ha),
+    q75        = quantile(area_ha, 0.75),
+    q90        = quantile(area_ha, 0.90),
+    q95        = quantile(area_ha, 0.95),
+    q99        = quantile(area_ha, 0.99),
+    area_max   = max(area_ha)
+  ) |>
+  mutate(across(everything(), ~ round(.x, 2))) |>
+  pivot_longer(everything(), names_to = "variable", values_to = "value")
+
+write_csv(patch_stats, here("outputs", subdir, "forest_frag_patch_stats.csv"))
+
+patch_areas <- df_patches |>
+  filter(area_ha >= 0.5) |>
+  summarise(
+    # patches of 6 pixels (minimum size retained)
+    pct_n_min_size     = 100 * mean(area_ha <= 0.54),
+    pct_n_below_1ha    = 100 * mean(area_ha < 1),
+    pct_area_below_1ha = 100 * sum(area_ha[area_ha < 1]) / sum(area_ha),
+    pct_area_top1      = 100 * max(area_ha) / sum(area_ha),
+    pct_area_top10     = 100 * sum(sort(area_ha, decreasing = TRUE)[1:10]) / sum(area_ha),
+    # weighted median patch size: patch size such that 50% of the forest
+    # is in patches larger than this value
+    area_weighted_med  = {
+      o <- order(area_ha)
+      a <- area_ha[o]
+      a[which(cumsum(a) >= sum(a) / 2)[1]]
+    }
+  ) |>
+  mutate(across(everything(), ~ round(.x, 2))) |>
+  pivot_longer(everything(), names_to = "variable", values_to = "value")
+
+write_csv(patch_areas, here("outputs", subdir, "forest_frag_patch_areas.csv"))
+
+## Forest patches were delineated using a 4-neighbour rule on a 30 m
+## raster. Before filtering, 101,296 patches were identified,
+## totalling 848,834 ha. Patch numbers were dominated by very small
+## fragments: 44.7% were single-pixel patches (0.09 ha) and 85.3% were
+## smaller than 1 ha, yet these small patches accounted for only 2.25%
+## of the forest area. Patches smaller than 0.5 ha were therefore
+## excluded, leaving 24,653 patches (24% of the initial number) that
+## covered 836,681 ha (98.6% of the initial forest area).
+
+## Among the retained patches, size was still highly right-skewed. The
+## median was 1.35 ha (interquartile range: 0.72-3.42 ha), 90% of
+## patches were smaller than 10.44 ha, and only 5% and 1% exceeded
+## 22.50 ha and 122.22 ha, respectively. Small patches remained
+## numerous: 10.6% of retained patches were at the minimum retained
+## size (6 pixels, 0.54 ha) and 39.6% were smaller than 1 ha, but
+## together the latter represented only 0.83% of the retained forest
+## area. The mean patch size (33.94 ha) was far higher than the median
+## and is not representative (SD = 1,550.02 ha), so the median and
+## quantiles are preferred.
+
+## Forest area was strongly concentrated in a few very large
+## patches. The largest patch covered 137,057 ha, i.e. 16.4% of the
+## retained forest area, and likely corresponds to the continuous
+## forest matrix. The ten largest patches together accounted for 73.6%
+## of the retained area. The area-weighted median patch size was
+## 99,862 ha, meaning that half of the retained forest area lies in
+## patches of that size or larger.
+
+
 
 # End
