@@ -14,7 +14,7 @@ ee.Initialize(
     opt_url="https://earthengine-highvolume.googleapis.com")
 
 # Working directory
-wd = Path.cwd().parent / "outputs/fcc-map-2015-2025-newcal/"
+wd = Path.cwd().parent / "outputs/7_fcc_map_2015_2025/"
 
 # Download data from GEE
 min_years = 10
@@ -53,7 +53,7 @@ geefcc.plot_fcc_loss_gain(
 
 # Stat
 ifile = out_dir / "fcc_tmf.tif"
-ofile = out_dir / f"fcc_statistics_{min_years}yr.csv"
+ofile = out_dir / f"fcc_map_areas_{min_years}yr.csv"
 res_df = geefcc.stat_fcc_loss_gain(
     input_file=ifile,
     epsg=32758,
@@ -74,7 +74,7 @@ ratio = lossgain_df["area_ha"] / forest_t1
 lossgain_df["annual_change_perc"] = round(100 * (1 - pow((1 - ratio), 1 / time)), 2)
 lossgain_df.iloc[:2, 2:4] = np.nan
 # Export
-ofile = out_dir / f"loss_gain_statistics_{min_years}yr.csv"
+ofile = out_dir / f"fcc_map_rates_{min_years}yr.csv"
 lossgain_df.to_csv(ofile, index=False)
 
 # Summary removing afforestation
@@ -92,7 +92,7 @@ ratio = lossgain_df["area_ha"] / forest_t1
 lossgain_df["annual_change_perc"] = round(100 * (1 - pow((1 - ratio), 1 / time)), 2)
 lossgain_df.iloc[:2, 2:4] = np.nan
 # Export
-ofile = out_dir / f"loss_gain_statistics_{min_years}yr_noaff.csv"
+ofile = out_dir / f"fcc_map_rates_{min_years}yr_noaff.csv"
 lossgain_df.to_csv(ofile, index=False)
 
 # End

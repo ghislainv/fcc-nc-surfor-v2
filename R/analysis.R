@@ -5,6 +5,8 @@
 # 4. Validation forest cover 2015 with AMAP map (val_for2015)
 # 5. Validation forest cover 2004--2008--2021 with photointerpretation (val_for_2004_2008_2021)
 # 6. Validation forest cover change 2004--2008--2021 with photointerpretation (val_fcc_2004_2008_2021)
+# 7. Deriving 2015--2025 fcc map for NC (fcc_map)
+# 8. Forest fragmentation in 2025 (forest_frag_2025)
 
 # Libraries
 library(readr)
@@ -64,7 +66,7 @@ df_disag <- df_2004 |>
 df_nobs_inter <- df_disag |>
   summarize(n=n(), .by=c(dataset, email)) |>
   pivot_wider(id_cols=email, names_from=dataset, values_from=n) |>
-  write_csv(here(out_dir, subdir, "df_nobs_interpreter.csv"))
+  write_csv(here(out_dir, subdir, "df_disag_nobs_by_interpreter.csv"))
   
 # Wide data
 data_wide <- df_disag |>
@@ -172,7 +174,7 @@ for (i in 1:3) {
   df_bad[i, "alpha_change"] <- K_change
 }
 df_bad |>
-  write_csv(here(out_dir, subdir, "df_bad_interpreter.csv"))
+  write_csv(here(out_dir, subdir, "df_disag_bad_interpreter.csv"))
 
 # ========================================================
 # 2. Best percentage of tree cover for GFC based on year 2021
@@ -202,7 +204,7 @@ for (i in 1:length(perc)) {
 }
 
 # Save results
-mat_acc |> write_csv(here(out_dir, subdir, "mat_accuracy_gfc_perc.csv"))
+mat_acc |> write_csv(here(out_dir, subdir, "gfc_perc_mat_accuracy.csv"))
 
 # Which perc
 gfc_acc <- mat_acc$acc[which.max(mat_acc$acc)]
@@ -222,7 +224,7 @@ p <- mat_acc |>
     panel.border = element_blank(),  # Supprime le cadre complet de la zone de tracé
     axis.line = element_line(color = "black") # Ajoute explicitement les lignes X et Y
   )
-ggsave(here(out_dir, subdir, "plot_accuracy_gfc_perc.pdf"))
+ggsave(here(out_dir, subdir, "gfc_perc_plot_accuracy.pdf"))
 
 # ========================================================
 # 3. Validation forest cover 2021 with photointerpretation
@@ -243,7 +245,7 @@ conf_mat <- caret::confusionMatrix(
   reference=df_cm$obs)
 
 # Save results
-sink(here(out_dir, subdir, "conf_mat_2021_fnf_gfc65.txt"))
+sink(here(out_dir, subdir, "val_for2021_fnf_conf_mat_gfc65.txt"))
 conf_mat
 sink()
 
@@ -259,7 +261,7 @@ conf_mat <- caret::confusionMatrix(
 tmf_acc <- as.numeric(conf_mat$overall["Accuracy"])
 
 # Save results
-sink(here(out_dir, subdir, "conf_mat_2021_fnf_tmf.txt"))
+sink(here(out_dir, subdir, "val_for2021_fnf_conf_mat_tmf.txt"))
 conf_mat
 sink()
 
@@ -269,17 +271,18 @@ comp_gfc_tmf_fnf2021 <- data.frame(
   perc=c(gfc_perc, NA),
   year=rep(2021, 2),
   acc=sapply(c(gfc_acc, tmf_acc), round, digits=3)) |>
-  write_csv(here(out_dir, subdir, "comp_gfc_tmf_fnf2021.csv"))
+  write_csv(here(out_dir, subdir, "val_for2021_fnf_comp_gfc_tmf.csv"))
 
-# ========================================================
-# 4. Comparison with AMAP map (~2015)
-# ========================================================
+# ===========================================================
+# 4. Validation forest cover 2015 with AMAP map (val_for2015)
+# ===========================================================
 
-# See python script comparing_amap_gfc_tmf_maps.py
+# See python script val_for2015.py
 
-# ========================================================================
+# ====================================================================
 # 5. Validation forest cover 2004--2008--2021 with photointerpretation
-# ========================================================================
+#    (val_for_2004_2008_2021)
+# ====================================================================
 
 subdir <- "5_val_for_2004_2008_2021"
 dir.create(here(out_dir, subdir), showWarnings=FALSE)
@@ -346,7 +349,7 @@ val_for_fcc <- function(obs_suffix = "allobs") {
     mutate(n_f = ff + fnf, n_nf = nfnf + nff) |>
     mutate(across(c(oa, sen, spe, kappa), ~ round(.x, 3))) |>
     arrange(years) |>
-    write_csv(here(out_dir, subdir, glue("conf_mat_forest_cover_2004_2008_2021_{suffix}.csv")))
+    write_csv(here(out_dir, subdir, glue("val_for_2004_2008_2021_{suffix}.csv")))
 
   # Much lower OA for forest/non-forest classification (~0.70). Much of the forest is classified as non-forest by the two products.
 
@@ -359,9 +362,10 @@ for (i in 1:n_suffix) {
  val_for_fcc(obs_suffix[i]) 
 }
 
-# ====================================================================================================
-# 6. Validation forest cover change 2004--2008--2021 with photointerpretation (val_fcc_2004_2008_2021)
-# ====================================================================================================
+# ===========================================================================
+# 6. Validation forest cover change 2004--2008--2021 with photointerpretation
+#    (val_fcc_2004_2008_2021)
+# ===========================================================================
 
 subdir <- "6_val_fcc_2004_2008_2021"
 dir.create(here(out_dir, subdir), showWarnings=FALSE)
@@ -387,7 +391,7 @@ val_fcc <- function(obs_suffix = "allobs") {
     mutate(for2008_pred_tmf=ifelse(Dec2007 %in% c(1, 2, 4), "Forest", "NonForest")) |>
     mutate(for2021_pred_tmf=ifelse(Dec2020 %in% c(1, 2, 4), "Forest", "NonForest"))
 
-  # Predicted change from GFC (considering tree cover >= 60%)
+  # Predicted change from GFC (considering tree cover >= 65%)
   df_fcc <- df_cm |>
     # p1
     mutate(fcc_p1_gfc_65=ifelse(for2004_pred_gfc_65=="Forest" &
@@ -472,10 +476,10 @@ val_fcc <- function(obs_suffix = "allobs") {
   }
 
   # Save
-  df_freq |> write.csv(here(out_dir, subdir, glue("conf_mat_fcc_{suffix}.csv")), row.names=TRUE)
+  df_freq |> write.csv(here(out_dir, subdir, glue("val_fcc_conf_mat_{suffix}.csv")), row.names=TRUE)
   df_acc <- df_acc |>
     mutate(across(c("sen_gain", "spe_gain", "sen_loss", "spe_loss"), ~ round(.x, 3))) |>
-    write_csv(here(out_dir, subdir, glue("accurracy_fcc_{suffix}.csv")))
+    write_csv(here(out_dir, subdir, glue("val_fcc_accurracy_{suffix}.csv")))
 
 }
 
@@ -485,5 +489,17 @@ n_suffix <- length(obs_suffix)
 for (i in 1:n_suffix) {
  val_fcc(obs_suffix[i]) 
 }
+
+# =====================================================
+# 7. Deriving 2015--2025 fcc map for NC (fcc_map)
+# =====================================================
+
+# See python script fcc_map_2015_2025.py
+
+# ==================================================
+# 8. Forest fragmentation in 2025 (forest_frag_2025)
+# ==================================================
+
+# See python script forest_frag_2025.py
 
 # End

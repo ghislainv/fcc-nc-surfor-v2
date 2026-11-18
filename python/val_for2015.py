@@ -41,7 +41,7 @@ gdal.VectorTranslate(
     format="GPKG"
 )
 
-# Rasterize borders of North and South Province
+# Rasterize land of North and South Province
 raster_file = out_dir / "gadm-newcal" / "grande-terre.tif"
 land = gdal.Rasterize(
     str(raster_file),
@@ -455,7 +455,7 @@ data = {
     "OA (/gfc)": ["", "", OA_tmf_gfc],
     "Kappa (/gfc)": ["", "", K_tmf_gfc],
 }
-ofile = out_dir / "comp_fc2015_amap_gfc_tmf.csv"
+ofile = out_dir / "val_for2015.csv"
 df = pd.DataFrame(data).to_csv(ofile, index=False)
 
 # ========================================================

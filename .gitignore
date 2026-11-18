@@ -3,8 +3,8 @@ outputs/4_val_for2015/*
 !outputs/4_val_for2015/tmf/
 outputs/4_val_for2015/tmf/*
 !outputs/4_val_for2015/tmf/comp_amap_tmf.png
-outputs/7_fcc_map_2015_2025_newcal
-outputs/8_forest_fragmentation
+outputs/7_fcc_map_2015_2025
+outputs/8_forest_fragmentation_2025
 article/figures
 article/article.pdf
 

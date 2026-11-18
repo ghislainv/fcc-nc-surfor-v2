@@ -1,4 +1,4 @@
-"""Forest fragmentation."""
+"""Forest fragmentation in 2025."""
 
 from pathlib import Path
 import sys
@@ -13,11 +13,11 @@ import matplotlib.pyplot as plt
 proj_dir = Path.cwd().parent
 
 # fcc file
-fcc_file = proj_dir / ("outputs/fcc-map-2015-2025-newcal"
+fcc_file = proj_dir / ("outputs/7_fcc_map_2015_2025"
                        "/out_tmf_10yr/fcc_tmf_epsg32758.tif")
 
 # Forest cover in 2025 (without considering afforestation)
-out_dir = proj_dir / "outputs" / "fragmentation"
+out_dir = proj_dir / "outputs" / "8_forest_fragmentation_2025"
 for2025 = out_dir / "for2025.tif"
 with rasterio.open(fcc_file) as src:
     profile = src.profile
@@ -82,7 +82,7 @@ dstband = None
 del src_ds, dst_ds
 
 # Histogram of distances
-ofile = out_dir / "distance_edge_histogram.png"
+ofile = out_dir / "forest_frag_dist_edge_histogram.png"
 bins = [1, 100, 250, 500, 1000, 5000]
 hist = np.zeros(len(bins) - 1, dtype=int)
 with rasterio.open(dist_file) as src:
@@ -190,7 +190,7 @@ tools.v_to_db(map="patches_vect", option="compact", columns="compact")
 tools.v_to_db(map="patches_vect", option="fd", columns="fd")
 tools.v_to_db(map="patches_vect", option="perimeter", columns="perimeter",
               unit="kilometers")
-ofile = out_dir / "forest_patches.csv"
+ofile = out_dir / "forest_frag_patches.csv"
 tools.db_out_ogr(input="patches_vect", output=ofile, format="CSV")
 
 # End
