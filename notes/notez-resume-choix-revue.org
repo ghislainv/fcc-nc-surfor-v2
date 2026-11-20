@@ -58,3 +58,29 @@ Article de validation, par photo-interprétation, de cartes de changement de cou
 
 * Question en suspens
 - Combien d'interprètes ont traité les mêmes points d'échantillonnage, ou s'agit-il d'un sous-ensemble en double interprétation ? Cela conditionne le niveau de revue réaliste.
+
+* Gemini
+
+Pour un article portant sur la couverture forestière et la déforestation en Nouvelle-Calédonie (un hotspot majeur de biodiversité dans le Pacifique Sud, avec un fort taux d'endémisme et des enjeux spécifiques liés aux forêts sèches, forêts humides et maquis miniers), plusieurs revues scientifiques sont pertinentes selon **l'angle principal de votre papier** (télédétection, écologie appliquée, politique de conservation ou étude régionale).
+
+| Revue                                                       | Éditeur          | Impact Factor (approx.) | Modèle d'accès         | Pourquoi c'est pertinent pour votre papier                                                                                                                         |
+| ---                                                         | ---              | ---                     | ---                    | ---                                                                                                                                                                |
+| ***Tropical Conservation Science***                         | SAGE             | ~1.7                    | Open Access (~1 000 $) | Très adapté aux études de cas régionales documentant les dynamiques de déforestation, la perte d'habitat et les enjeux de conservation locale.                     |
+| ***Pacific Conservation Biology***                          | CSIRO Publishing | ~1.5                    | Hybride (OA optionnel) | **Cible géographique idéale.** Spécialisée dans la biologie de la conservation du Pacifique ; publie régulièrement des travaux sur la Nouvelle-Calédonie.          |
+| ***Forest Ecology and Management***                         | Elsevier         | ~3.7                    | Hybride                | Idéal si votre papier analyse les facteurs écologiques, les impacts des perturbations (feux, mines, espèces envahissantes) ou la gestion forestière.               |
+| ***Regional Environmental Change***                         | Springer         | ~4.2                    | Hybride                | Excellent choix si l'article relie la déforestation aux moteurs socio-économiques, à l'aménagement du territoire ou au changement climatique.                      |
+| ***Remote Sensing in Ecology and Conservation***            | Wiley (ZSL)      | ~3.9                    | Open Access (~2 500 $) | À privilégier si le cœur de votre méthodologie repose sur l'imagerie satellite (Sentinel, Landsat, LiDAR) et la cartographie de la couverture forestière.          |
+| ***Biological Conservation*** ou ***Conservation Biology*** | Elsevier / Wiley | ~5.9 – 6.3              | Hybride                | Revues de premier plan à viser si vos résultats démontrent un impact critique sur des espèces endémiques menacées ou apportent une avancée méthodologique majeure. |
+
+---
+
+* Comment affiner votre choix selon l'angle du manuscrit
+
+** Angle régional et conservation appliquée: /Pacific Conservation Biology/ ou /Tropical Conservation Science/. Le taux d'acceptation est généralement plus accessible et le lectorat est directement concerné par la gestion des écosystèmes insulaires ou tropicaux.
+** Angle cartographie, SIG et télédétection: /Remote Sensing in Ecology and Conservation/ ou /International Journal of Applied Earth Observation and Geoinformation/ (Elsevier, IF ~7.5).
+** Angle francophone ou note naturaliste / botanique: Si vous souhaitez publier en français ou toucher une communauté spécialisée sur la flore néo-calédonienne, /Adansonia/ (Muséum national d'Histoire naturelle, gratuit, diamant Open Access) ou /Bois et Forêts des Tropiques/ (CIRAD, gratuit, diamant Open Access) sont des options reconnues.
+
+* Conseils avant la soumission
+
+1. **Vérifiez la portée internationale :** Pour les revues généralistes (comme *Forest Ecology and Management*), veillez à dépasser le simple constat local : montrez en quoi le cas néo-calédonien éclaire des dynamiques plus larges (écosystèmes insulaires, forêts ultramafiques, fragmentation d'habitats à fort endémisme).
+2. **Budget (APC) :** Si vous êtes affilié à un établissement français (ex. IRD, CIRAD, CNRS, Université de la Nouvelle-Calédonie), vérifiez les accords nationaux Couperin (notamment chez Wiley, Elsevier ou Springer) qui permettent souvent de publier en Open Access sans frais supplémentaires.

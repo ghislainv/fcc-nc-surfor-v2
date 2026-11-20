@@ -158,7 +158,7 @@ df_alpha[n_datasets + 1, 2:4] <- K_alpha
 # Combine raw disagreement and alpha
 df_disag_interpreters <- raw_disag |>
   left_join(df_alpha, by="dataset") |>
-  write_csv(here(out_dir, subdir, "df_disag_interp.csv"))
+  write_csv(here(out_dir, subdir, "df_disag_nobs_by_date.csv"))
 
 # Bad interpreter
 # ---------------
@@ -176,6 +176,34 @@ for (i in 1:3) {
 }
 df_bad |>
   write_csv(here(out_dir, subdir, "df_disag_bad_interpreter.csv"))
+
+# Cases with no majority
+# ----------------------
+
+# for2021_fnf
+n_rep <- df_for2021 |>
+  group_by(plotid, sampleid) |>
+  filter(length(Classification) > 1) |>
+  slice(1) |>
+  ungroup() |>
+  nrow()
+n_disag3 <- df_for2021 |>
+  group_by(plotid, sampleid) |>
+  filter(n_distinct(Classification) == 3) |>
+  slice(1) |>
+  ungroup() |>
+  nrow()
+n_indet <- df_for2021 |>
+  group_by(plotid, sampleid) |>
+  filter(length(Classification) > 1) |>
+  filter(n_distinct(Classification) %in% c(1, 2)) |>
+  filter(names(which.max(table(Classification))) == "Non interprétable") |>
+  # slice(1) |>
+  ungroup() |>
+  nrow()
+ofile <- here(out_dir, subdir, "df_disag_nomaj_for221_fnf.csv")
+write_csv(data.frame(n_rep, n_disag3, n_indet), file=ofile)
+
 
 # ========================================================
 # 2. Best percentage of tree cover for GFC based on year 2021
