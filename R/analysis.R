@@ -201,9 +201,32 @@ n_indet <- df_for2021 |>
   # slice(1) |>
   ungroup() |>
   nrow()
-ofile <- here(out_dir, subdir, "df_disag_nomaj_for221_fnf.csv")
+ofile <- here(out_dir, subdir, "df_disag_nomaj_for2021_fnf.csv")
 write_csv(data.frame(n_rep, n_disag3, n_indet), file=ofile)
 
+# df_2008
+n_rep <- df_2008 |>
+  group_by(plotid, sampleid) |>
+  filter(length(Classification) > 1) |>
+  slice(1) |>
+  ungroup() |>
+  nrow()
+n_disag3 <- df_2008 |>
+  group_by(plotid, sampleid) |>
+  filter(n_distinct(Classification) == 3) |>
+  slice(1) |>
+  ungroup() |>
+  nrow()
+n_indet <- df_2008 |>
+  group_by(plotid, sampleid) |>
+  filter(length(Classification) > 1) |>
+  filter(n_distinct(Classification) %in% c(1, 2)) |>
+  filter(names(which.max(table(Classification))) == "Non interprétable") |>
+  # slice(1) |>
+  ungroup() |>
+  nrow()
+ofile <- here(out_dir, subdir, "df_disag_nomaj_for2008.csv")
+write_csv(data.frame(n_rep, n_disag3, n_indet), file=ofile)
 
 # ========================================================
 # 2. Best percentage of tree cover for GFC based on year 2021
