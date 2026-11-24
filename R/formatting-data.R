@@ -12,75 +12,78 @@ library(caret)  # Confusion matrices
 # - sampleid in 2008 correspond to sampleid in 2021 + 16000.
 # Only pixels in 2008 en 2021_fnf have three interpreters (A, O, and S).
 # Pixels in 2008 and 2021_fnf have either 1 or 3 interpreters (not 2).
-
-# Load datasets for change
-file_2004 <- "38354-samples_2000.csv"
-file_2008 <- "38356-samples_2010.csv"
-file_2021 <- "38355-samples_2021.csv"
-df_2004 <- read_csv(here("data_raw", file_2004), show_col_types=FALSE) |>
-  mutate(year=2004, dataset="change_0408")
-df_2008 <- read_csv(here("data_raw", file_2008), show_col_types=FALSE) |>
-  mutate(year=2008)
-df_2021 <- read_csv(here("data_raw", file_2021), show_col_types=FALSE) |>
-  mutate(plotid=plotid + 1000) |>
-  mutate(sampleid=sampleid + 16000) |>
-  mutate(year=2021, dataset="change_0821")
-
-# Add the period to observations in 2008 (the pivotal year including all plots)
-id_2004 <- paste(df_2004$plotid, df_2004$sampleid, sep="_")
-id_2008 <- paste(df_2008$plotid, df_2008$sampleid, sep="_")
-df_2008 <- df_2008 |>
-  mutate(dataset=ifelse(id_2008 %in% id_2004, "change_0408", "change_0821"))
   
 # Function "format_data"
-format_data <- function(select_obs = FALSE) {
-  if (select_obs == TRUE) {
-    # Remove stagiaire observations
-    # and select only pixels were both interpreters agree for 2008
-    suffix <- "selobs"
-    df_2004 <- df_2004 |>
-      filter(email != "stagiaire@oeil.nc")
-    
-    df_2008 <- df_2008 |>
-      filter(email != "stagiaire@oeil.nc") |>
-      group_by(plotid, sampleid) |>
-      # Select only pixels were both remaining interpreters agree
-      filter(n_distinct(Classification) == 1) |>
-      slice(1) |>
-      ungroup()
-    
-    df_2021 <- df_2021 |>
-      filter(email != "stagiaire@oeil.nc")
-    
-  } else {
-    suffix <- "allobs"
-    set.seed(1234) # Set seed for reproducibility of the results
-    df_2004 <- df_2004 |>
-      group_by(plotid, sampleid) |>
-      # Select one observation at random
-      slice_sample(n=1) |>
-      ungroup()
+format_data <- function() {
 
-    df_2008 <- df_2008 |>
-      group_by(plotid, sampleid) |>
-      # Set "Non interprétable" if three different interpretations (in fact it is never the case)
-      mutate(Commentaire = paste("agreement:", max(table(Classification)),
-                                 "/", length(Classification))) |>
-      mutate(Classification = ifelse(length(unique(Classification)) == 3,
-                                     "Non interprétable", Classification)) |> 
-      # Majority of the observations per pixel
-      filter(Classification == names(which.max(table(Classification)))) |>
-      slice(1) |>
-      ungroup()
+  # -------------------
+  # Message
+  # -------------------
 
-    df_2021 <- df_2021 |>
-      group_by(plotid, sampleid) |>
-      # Select one observation at random
-      slice_sample(n=1) |>
-      ungroup()
-  }
+  cat("Formatting data\n")
 
+  # ------------------------
+  # Load datasets for change
+  # ------------------------
+  
+  file_2004 <- "38354-samples_2000.csv"
+  file_2008 <- "38356-samples_2010.csv"
+  file_2021 <- "38355-samples_2021.csv"
+  df_2004 <- read_csv(here("data_raw", file_2004), show_col_types=FALSE) |>
+    mutate(year=2004, dataset="change_0408")
+  df_2008 <- read_csv(here("data_raw", file_2008), show_col_types=FALSE) |>
+    mutate(year=2008)
+  df_2021 <- read_csv(here("data_raw", file_2021), show_col_types=FALSE) |>
+    mutate(plotid=plotid + 1000) |>
+    mutate(sampleid=sampleid + 16000) |>
+    mutate(year=2021, dataset="change_0821")
+
+  # Add the period to observations in 2008 (the pivotal year including all plots)
+  id_2004 <- paste(df_2004$plotid, df_2004$sampleid, sep="_")
+  id_2008 <- paste(df_2008$plotid, df_2008$sampleid, sep="_")
+  df_2008 <- df_2008 |>
+    mutate(dataset=ifelse(id_2008 %in% id_2004, "change_0408", "change_0821"))
+  
+  # ---------------------------------------------
+  # Define consensus and Not Interpretable pixels
+  # ---------------------------------------------
+
+  set.seed(1234) # Set seed for reproducibility of the results
+  df_2004 <- df_2004 |>
+    group_by(plotid, sampleid) |>
+    # Set "Non interprétable" if two different interpretations
+    mutate(Classification = ifelse(length(unique(Classification)) == 2,
+                                   "Non interprétable", Classification)) |>
+    # Majority of the observations per pixel
+    filter(Classification == names(which.max(table(Classification)))) |>
+    slice(1) |>
+    ungroup()
+
+  df_2008 <- df_2008 |>
+    group_by(plotid, sampleid) |>
+    # Set "Non interprétable" if three different interpretations (in fact it is never the case)
+    mutate(Commentaire = paste("agreement:", max(table(Classification)),
+                               "/", length(Classification))) |>
+    mutate(Classification = ifelse(length(unique(Classification)) == 3,
+                                   "Non interprétable", Classification)) |> 
+    # Majority of the observations per pixel
+    filter(Classification == names(which.max(table(Classification)))) |>
+    slice(1) |>
+    ungroup()
+
+  df_2021 <- df_2021 |>
+    group_by(plotid, sampleid) |>
+    # Set "Non interprétable" if two different interpretations
+    mutate(Classification = ifelse(length(unique(Classification)) == 2,
+                                   "Non interprétable", Classification)) |>
+    # Majority of the observations per pixel
+    filter(Classification == names(which.max(table(Classification)))) |>
+    slice(1) |>
+    ungroup()
+
+  # ------------------
   # Combining datasets
+  # ------------------
   # Start with 2008 which is the central year and includes
   # all plots used for interpreting change.
   df_change <- df_2008 |>
@@ -156,12 +159,12 @@ format_data <- function(select_obs = FALSE) {
       "Non Forêt" ~ "NonForest",
       default = NA
     ))) |>
-    write_csv(here("data", glue("df_interp_{suffix}.csv")))
+    write_csv(here("data", "df_interp_consensus.csv"))
   
   # Combine with GEE extract
   df_gee <- read_csv(here("data", glue("df_gee.csv")), show_col_types=FALSE) |>
     select(-lat, -lon)
-  df_surfor_gee <- read_csv(here("data", glue("df_interp_{suffix}.csv")), show_col_types=FALSE) |>
+  df_surfor_gee <- read_csv(here("data", "df_interp_consensus.csv"), show_col_types=FALSE) |>
     left_join(df_gee, by=c("plotid", "sampleid", "dataset"))
 
   # Select variables and write
@@ -173,13 +176,10 @@ format_data <- function(select_obs = FALSE) {
       fcc_p1, fcc_p2, for2021_fnf,
       Dec2003, Dec2004, Dec2007, Dec2008, Dec2020, Dec2021,
       gain, lossyear, treecover2000) |>
-    write_csv(here("data", glue("df_surfor_{suffix}.csv")))
+    write_csv(here("data", "df_surfor_consensus.csv"))
 }
 
 # Use format_data function
-select_obs <- c(FALSE, TRUE)
-for (i in select_obs) {
-  format_data(select_obs = i)
-}
+format_data()
 
 # End

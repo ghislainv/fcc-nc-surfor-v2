@@ -117,35 +117,31 @@ To obtain reference datasets for the study of the forest cover change for the pe
 
 Stratified sampling was employed to collect the reference datasets for forest cover change. This approach was adopted given the rarity of forest change events, which usually occur at a rate close to 1 % per year [cite:@Olofsson2014]. Stratification was based on the classes of change obtained from the GFC and TMF datasets regarding the forest cover: "gain" or "loss". To assess change between 2004 and 2008, we drew a stratified sample of 1000 points: 600 in areas classified as loss by either GFC (300 points) or TMF (300 points), and 400 in areas classified as gain by either GFC (200 points) or TMF (200 points). Since GFC gain data are only available for the period 2000--2012 [cite:@Hansen2013], we used this layer to sample the 200 points corresponding to GFC gain for the period 2004--2008. To assess change between 2008 and 2021, we drew a stratified sample of 850 points: 600 in areas classified as loss by either GFC (300 points) or TMF (300 points), and 250 in areas classified as gain by TMF. As before, points were used to define the center of a cluster of nine (three by three) 30 m pixels. We thus obtained a total of 9000 sampled pixels for the period 2004--2008 and 7650 pixels for the period 2008--2021.
 
-Two interpreters classified the 9000 and 7650 pixels for the years 2004 and 2021 respectively, while three interpreters classified the 16650 pixels for the pivotal year 2008. As previously, five percent of the pixels were classified by several interpreters at each date to be able to estimate interpreter disagreement: by two interpreters for years 2004 and 2021, and by three interpreters for the year 2008. Pixels were classified as "forest", "non-forest", or "not interpretable" at each date using the same forest definition as before. From the forest cover classification at each date, we derived five classes of forest cover change for the two periods: "loss", "gain", "stable forest", "stable non-forest", and "not interpretable".
+Two interpreters shared the classification of the 9000 and 7650 pixels for the years 2004 and 2021 respectively, while three interpreters shared the classification of the 16650 pixels for the pivotal year 2008. As previously, five percent of the pixels were classified by several interpreters at each date to be able to estimate interpreter disagreement: by two interpreters for years 2004 and 2021, and by three interpreters for the year 2008. Pixels were classified as "forest", "non-forest", or "not interpretable" at each date using the same forest definition as before. From the forest cover classification at each date, we derived five classes of forest cover change for the two periods: "loss", "gain", "stable forest", "stable non-forest", and "not interpretable".
 
 ** Disagreement between interpreters
 
-TO BE MODIFIED:
+We obtained four datasets after photo-interpretation. One dataset, based on randomly sampled points, was used to analyze forest cover in 2021. The other three datasets, generated through stratified sampling, represent forest cover in 2004, 2008, and 2021 and were used to estimate forest cover change between these dates. Five percent of the sample clusters in each dataset were interpreted independently by two (2004, 2021) or three (2008, 2021 forest/non-forest) interpreters. To assess the level of disagreement among interpreters, each sample point interpreted by at least two of the three interpreters was analyzed across all four datasets. Raw disagreement was quantified as the proportion of sample points for which at least two interpreters assigned different land cover classes ("forest", "non-forest", or "not interpretable").
 
-We obtained four datasets after photo-interpretation. One dataset, based on randomly sampled points, was used to analyze forest cover in 2021. The other three datasets, generated through stratified sampling, represent forest cover in 2004, 2008, and 2021 and were used to estimate forest cover change between these dates. Five percent of the sample clusters in each dataset were interpreted independently by two (2004, 2021) or three (2008, 2021 forest/non-forest) interpreters.
+We also quantified agreement with Krippendorff's alpha ($\alpha_{K}$) [cite:@Krippendorff2008], a chance-corrected measure of agreement, treating the data as nominal with three classes (forest, non-forest, not interpretable). Alpha was computed separately for each dataset and all datasets combined, using sample points interpreted by at least two interpreters. It is defined as $\alpha_{K} = 1 - D_{o} / D_{e}$, where $D_{o}$ is the observed disagreement, i.e. the proportion of discordant pairs of annotations within sample points (each point being weighted by its number of annotations), and $D_{e}$ is the disagreement expected by chance, derived from the pooled class frequencies: $D_{e} = (n^2 - \sum_k n_k^2) / (n(n-1))$, where $n$ is the total number of annotations and $n_k$ the number of annotations in class $k$. Fore convenience, $\alpha_{K}$, $D_{e}$, and $D_{o}$ were all expressed in percent in this study. A value of 100 for $\alpha_{K}$ indicates perfect agreement and 0 indicates agreement no better than chance.
 
-To assess the level of disagreement among interpreters, each sample point interpreted by at least two of the three interpreters was analyzed across all four datasets. Raw disagreement was first quantified as the proportion of sample points for which at least two interpreters assigned different land cover classes ("forest", "non-forest", or "not interpretable").
-
-To provide a chance-corrected measure of agreement, Krippendorff's Alpha ($\alpha_{K}$) [cite:@Krippendorff2008] was then computed for each dataset individually and across all datasets combined. The observed disagreement ($D_{o}$) was defined as the mean, over all sample points, of the proportion of discordant pairs among all possible pairs of annotations at that point. The expected disagreement by chance ($D_{e}$) was derived from the marginal class frequencies across all annotations, and equals one minus the sum of squared class frequencies (i.e., the probability that two randomly drawn annotations belong to different classes). Krippendorff's Alpha was then calculated as $\alpha_{K} = 1 - (D_{o} / D_{e})$, where a value of 1 indicates perfect agreement and 0 indicates agreement no better than chance. Finally, to identify whether a single interpreter was driving disagreement, a leave-one-out sensitivity analysis was performed: each interpreter was removed in turn, Alpha was recomputed on the remaining two interpreters across all datasets, and the change in Alpha relative to the full three-interpreter value was recorded.
-
-We quantified agreement with Krippendorff's alpha (nominal data, three classes: forest, non-forest, not interpretable), computed separately for each dataset. To assess whether one interpreter was less consistent than the others, we used the two datasets with three interpreters (2008 and 2021 forest/non-forest; 1,323 pixels, 147 clusters) and applied two complementary approaches. First, we recomputed alpha after removing each interpreter in turn, on the same set of pixels, and compared it with the alpha obtained with all three interpreters. We repeated this calculation treating "not interpretable" as missing data to check that results did not depend on this class. Confidence intervals (95%) for the change in alpha were obtained by bootstrapping clusters (1,000 replicates), because the nine pixels of a cluster are not independent. Second, for pixels where two interpreters agreed and the third disagreed, we counted how often each interpreter was in the minority. Under equal reliability, each interpreter is expected to be in the minority in one third of cases, which we tested with a chi-squared goodness-of-fit test.
+To assess whether one interpreter was less consistent than the others, we pooled the two datasets with three interpreters (2008 and 2021 forest/non-forest; 147 clusters, 1323 pixels) and applied two complementary approaches. First, we compared the alpha obtained with all three interpreters to the alpha obtained after removing each interpreter in turn, on the same set of pixels. A positive change in alpha after removing an interpreter indicates that this interpreter reduced the overall agreement. Confidence intervals (95%) for the change in alpha were obtained by bootstrapping clusters (1,000 replicates), because the nine pixels of a cluster are not independent. Second, for pixels where two interpreters agreed and the third disagreed, we counted how often each interpreter was in the minority. Under equal reliability, each interpreter is expected to be in the minority in one third of cases, which we tested with a chi-squared goodness-of-fit test.
 
 ** Reference datasets for forest cover and forest cover change
 
 *** Consensus reference data-sets
 
-From the photo-interpretation results, we derived consensus reference datasets for forest cover in 2021 and for forest cover change over 2004--2008--2021. These datasets are the best available reference rather than an error-free ground truth, since all interpreters worked on the same imagery [cite:@Olofsson2014]. Pixels classified as "not interpretable" could not be assessed and were excluded from the reference datasets.
+From the photo-interpretation results, we derived consensus reference datasets for forest cover in 2021 and for forest cover change over 2004--2008--2021. These datasets are the best available reference rather than an error-free ground truth [cite:@Olofsson2014]. Pixels classified as "not interpretable" could not be assessed and were excluded from the reference datasets. They represent a small proportion of the data ($\leq$ 5.5% across datasets).
 
-For the 2021 forest cover dataset, a random subset of 486 pixels (5.1% of the 9,450 pixels) was interpreted by three interpreters and assigned to one of three classes: "forest", "non-forest" or "not interpretable". The reference class of these pixels was the class chosen by the majority of interpreters. A majority was always reached, as no pixel received three different classes. Pixels for which the majority class was "not interpretable" (n = 60 of 486) were excluded. The remaining 95% of pixels, interpreted by a single interpreter, kept the class assigned by that interpreter, except those classified as "not interpretable", which were also excluded (n = [x] of [y]).
+For the 2021 forest cover dataset, a random subset of 486 pixels (5.1% of the 9,450 pixels) was interpreted by three interpreters and assigned to one of three classes: "forest", "non-forest" or "not interpretable". The reference class of these pixels was the class chosen by the majority of interpreters. A majority was always reached, as no pixel received three different classes. Pixels for which the majority class was "not interpretable" ($n = 60$) were excluded. The remaining 95% of pixels, interpreted by a single interpreter, kept the class assigned by that interpreter, except those classified as "not interpretable", which were also excluded ($n = 461$).
 
-For the 2008 forest cover dataset used in the change analysis, the same majority rule was applied to the 837 pixels (5.0% of 16,650) interpreted by three interpreters. A majority was always reached, and no pixel had "not interpretable" as majority class. Pixels interpreted by a single interpreter and classified as "not interpretable" were excluded (n = [x] of [y]).
+For the 2008 forest cover dataset used in the change analysis, the same majority rule was applied to the 837 pixels (5.0% of 16,650) interpreted by three interpreters. A majority was always reached, and no pixel had "not interpretable" as majority class. Pixels interpreted by a single interpreter and classified as "not interpretable" were excluded ($n = 65$). For the 2004 and 2021 forest cover datasets used in the change analysis (including 9,000 and 7,650 pixels respectively), only two interpreters classified the replicated pixels (450 pixels in 2004 and 396 in 2021). Replicated pixels for which the two interpreters assigned different classes (96 and 102 pixels, respectively) were excluded, as no third opinion was available. Pixels classified as "not interpretable" by a single interpreter were also excluded ($n = 154$ in 2004 and 156 in 2021).
 
-For the 2004 and 2021 forest cover datasets used in the change analysis, only two interpreters classified the replicated pixels (450 pixels in 2004 and 396 in 2021). Replicated pixels for which the two interpreters assigned different classes (96 and 102 pixels, respectively) were excluded, as no third opinion was available. These pixels represent 1.1% and 1.3% of the full samples (9,000 and 7,650 pixels). Since the replicated pixels were drawn at random and this exclusion concerns a very small share of the samples, we considered the resulting selection bias on map accuracy to be negligible. Pixels classified as "not interpretable" by a single interpreter were also excluded (n = [x] in 2004 and [y] in 2021).
-
-For each of the two change periods (2004--2008 and 2008--2021), the change class of a pixel ("loss", "gain", "stable forest" or "stable non-forest") was derived from its reference classes at the two dates. Pixels excluded at either date, because they were not interpretable or because no consensus was reached, were excluded from the change reference dataset (n = [x] for 2004--2008 and n = [y] for 2008--2021).
+For each of the two change periods (2004--2008 and 2008--2021), the change class of a pixel ("loss", "gain", "stable forest" or "stable non-forest") was derived from its reference classes at the two dates. Pixels excluded at either date, because they were not interpretable or because no consensus was reached, were excluded from the change reference dataset ($n = 263$ of 9000 for 2004--2008 and $n = 294$ of 7650 for 2008--2021).
 
 *** Alternative reference data-sets to illustrate the effect of interpreter variability on estimating map accuracy
+
+
 
 ** Identifying the best GFC tree cover threshold for defining forest in New Caledonia
 :PROPERTIES:
@@ -170,14 +166,7 @@ We compared the TMF and GFC 2021 forest cover maps against the photo-interpretat
 
 ** Disagreement between interpreters
 
-In the datasets with three interpreters, removing one interpreter changed alpha by +1.4 (interpreter S), −2.6 (A) and +0.9 (O) points (Table X). Results were similar when "not interpretable" was treated as missing data (+1.2, −3.2 and +1.4 points, respectively). The bootstrap 95% confidence intervals of these changes were wide and overlapping (S: −3.0 to +6.3; A: −7.5 to +2.3; O: −3.5 to +5.5), and all included zero. Among the 322 pixels with a two-versus-one split, interpreters S, O and A were in the minority in 115 (35.7%), 115 (35.7%) and 92 (28.6%) cases, respectively, which did not differ significantly from an equal distribution (χ² = 3.29, df = 2, P = 0.19). We therefore found no evidence that any interpreter was less reliable than the others, and we neither excluded nor weighted the observations of any interpreter. Given the limited number of replicated clusters, this analysis has low power and cannot establish that the interpreters were equivalent.
-
-# ## Remarques
-
-# - **Vérifiez les effectifs** : j'ai écrit 1 323 pixels et 147 clusters (93 + 54) d'après vos tableaux. Les 322 pixels en partage 2-1 (208 + 114) correspondent à votre table (92 + 115 + 115).
-# - **Alpha poolé** : les changements portent sur 2008 + fnf ensemble, ce qui est dit dans la méthode. Le P du χ² est optimiste, les pixels d'un cluster étant corrélés ; vous pouvez l'ajouter en une phrase ou le retirer.
-# - **Pour le tableau** : mettez en colonnes l'alpha de référence et le changement sans S, A, O, avec et sans NI, plus l'IC bootstrap.
-# - **Anonymat** : si vous préférez, remplacez S, A, O par « interpreter 1, 2, 3 ».
+Interpreter disagreement was substantial (Table [[tab:disag]]). Among the pixels interpreted by at least two interpreters (about 5% of the sample, 2,169 pixels in total), 21.3 to 25.8% were assigned different classes by at least two interpreters, i.e. 24.0% overall. Chance-corrected agreement was only moderate to substantial, with Krippendorff's alpha ranging from 52.1% (2004) to 72.7% (2021 forest/non-forest). There was no evidence that a single interpreter drove this disagreement. Removing any one interpreter changed alpha by only -2.6 to +1.4 percentage points, and all bootstrap 95% CIs included zero (Table [[tab:loo]]). Among the 322 pixels where two interpreters agreed and the third disagreed, the three interpreters were in the minority in similar proportions (A: 28.6%, O: 35.7%, S: 35.7%). These proportions did not differ significantly from the 33.3% expected under equal reliability ($\chi^2$ = 3.29, df = 2, p = 0.19). Disagreement was globally lower for the 2021 forest/non-forest dataset (D_o = 15.6%) than for the three other datasets (16.6% for 2008, 21.3% for 2004 and 25.8% for 2021), consistent with its higher alpha.
 
 ** Accuracy of forest cover maps
 
@@ -241,31 +230,32 @@ In the datasets with three interpreters, removing one interpreter changed alpha 
 
 #+NAME: cap-disag
 #+begin_src org :results output org :exports none
-*Disagreement statistics per dataset.* This table presents the raw percentage of disagreement $\%_{\text{disag}}$ and the Krippendorff's Alpha ($\alpha_{K}$) for each dataset and for all datasets combined. The dataset =for2021_fnf= was used to evaluate the forest/non-forest cover in 2021. The three other datasets =for2000=, =for2008=, and =for2021= were used to evaluate the forest cover change in 2000--2008--2021. Krippendorff's Alpha ranges from 1 (perfect agreement) to 0 (agreement no better than chance). $n_{C}$ is the number of pixel clusters (3 \times 3 pixels with 30 m resolution each), $n_{p}$ is the number of pixels, $n_{\text{rep}}$ is the number of pixels analyzed by several interpreters, $\%_{\text{rep}}$ is the percentage of pixels analyzed by several interpreters, $n_{\text{disag}}$ is the number of disagreements, $D_{o}$ is the observed disagreement (proportion of discordant pairs among all pairs), $D_{e}$ is the expected disagreement by chance. $D_o$ differs from the raw percentage of disagreement, which only counts the proportion of pixels with disagreement.@@latex:\label{tab:disag}@@\\
+*Disagreement statistics per dataset.* This table presents the raw percentage of disagreement $\%_{\text{disag}}$ and the Krippendorff's Alpha ($\alpha_{K}$) for each dataset and for all datasets combined. The dataset =for2021_fnf= was used to evaluate the forest/non-forest cover in 2021. The three other datasets =for2000=, =for2008=, and =for2021= were used to evaluate the forest cover change in 2000--2008--2021. Krippendorff's Alpha (here in %) ranges from 100 (perfect agreement) to 0 (agreement no better than chance). $n_{C}$ is the number of pixel clusters (3 \times 3 pixels with 30 m resolution each), $n_{p}$ is the number of pixels, $n_{\text{rep}}$ is the number of pixels analyzed by several interpreters, $\%_{\text{rep}}$ is the percentage of pixels analyzed by several interpreters, $n_{\text{disag}}$ is the number of disagreements, $D_{o}$ is the observed disagreement (percentage of discordant pairs among all pairs), $D_{e}$ is the expected percentage of disagreement by chance. $D_o$ differs from the raw percentage of disagreement, which only counts the proportion of pixels with disagreement.@@latex:\label{tab:disag}@@\\
 #+end_src
 
 #+NAME: tab:disag
 #+BEGIN_src python :results value raw :exports results :var cap=cap-disag
 import pandas as pd
 from tabulate import tabulate
-df = pd.read_csv("../outputs/df_disag_interp.csv")
+df = pd.read_csv("../outputs/1_disag/out_disag_by_dataset.csv")
 var_names = ["Dataset", r"$n_{C}$", r"$n_{p}$", r"$n_{\text{rep}}$", r"$\%_{\text{rep}}$", r"$n_{\text{disag}}$", r"$\%_{\text{disag}}$", r"$D_{o}$", r"$D_{e}$", r"$\alpha_{K}$"]
-tbl = tabulate(df, headers=var_names, tablefmt="orgtbl", floatfmt=".1f", showindex=False)
+floatfmt = [".1f"] * (len(var_names) - 1) + [".2f"]
+tbl = tabulate(df, headers=var_names, tablefmt="orgtbl", floatfmt=floatfmt, showindex=False)
 header = (f"#+CAPTION: {cap}\n"
           "#+ATTR_LATEX: :booktabs t :font \\small\n")
 header + tbl
 #+END_src
 
 #+RESULTS: tab:disag
-#+CAPTION: *Disagreement statistics per dataset.* This table presents the raw percentage of disagreement $\%_{\text{disag}}$ and the Krippendorff's Alpha ($\alpha_{K}$) for each dataset and for all datasets combined. The dataset =for2021_fnf= was used to evaluate the forest/non-forest cover in 2021. The three other datasets =for2000=, =for2008=, and =for2021= were used to evaluate the forest cover change in 2000--2008--2021. Krippendorff's Alpha ranges from 1 (perfect agreement) to 0 (agreement no better than chance). $n_{C}$ is the number of pixel clusters (3 \times 3 pixels with 30 m resolution each), $n_{p}$ is the number of pixels, $n_{\text{rep}}$ is the number of pixels analyzed by several interpreters, $\%_{\text{rep}}$ is the percentage of pixels analyzed by several interpreters, $n_{\text{disag}}$ is the number of disagreements, $D_{o}$ is the observed disagreement (proportion of discordant pairs among all pairs), $D_{e}$ is the expected disagreement by chance. $D_o$ differs from the raw percentage of disagreement, which only counts the proportion of pixels with disagreement.@@latex:\label{tab:disag}@@\\
+#+CAPTION: *Disagreement statistics per dataset.* This table presents the raw percentage of disagreement $\%_{\text{disag}}$ and the Krippendorff's Alpha ($\alpha_{K}$) for each dataset and for all datasets combined. The dataset =for2021_fnf= was used to evaluate the forest/non-forest cover in 2021. The three other datasets =for2000=, =for2008=, and =for2021= were used to evaluate the forest cover change in 2000--2008--2021. Krippendorff's Alpha (here in %) ranges from 100 (perfect agreement) to 0 (agreement no better than chance). $n_{C}$ is the number of pixel clusters (3 \times 3 pixels with 30 m resolution each), $n_{p}$ is the number of pixels, $n_{\text{rep}}$ is the number of pixels analyzed by several interpreters, $\%_{\text{rep}}$ is the percentage of pixels analyzed by several interpreters, $n_{\text{disag}}$ is the number of disagreements, $D_{o}$ is the observed disagreement (percentage of discordant pairs among all pairs), $D_{e}$ is the expected percentage of disagreement by chance. $D_o$ differs from the raw percentage of disagreement, which only counts the proportion of pixels with disagreement.@@latex:\label{tab:disag}@@\\
 #+ATTR_LATEX: :booktabs t :font \small
 | Dataset      |   $n_{C}$ |   $n_{p}$ |   $n_{\text{rep}}$ |   $\%_{\text{rep}}$ |   $n_{\text{disag}}$ |   $\%_{\text{disag}}$ |   $D_{o}$ |   $D_{e}$ |   $\alpha_{K}$ |
 |--------------+-----------+-----------+--------------------+---------------------+----------------------+-----------------------+-----------+-----------+----------------|
-| for2000      |      1000 |      9000 |                450 |                 5.0 |                   96 |                  21.3 |      21.3 |      46.2 |           53.8 |
-| for2008      |      1850 |     16650 |                837 |                 5.0 |                  208 |                  24.9 |      16.6 |      45.5 |           63.6 |
-| for2021      |       850 |      7650 |                396 |                 5.2 |                  102 |                  25.8 |      25.8 |      44.6 |           42.2 |
-| for2021_fnf  |      1050 |      9450 |                486 |                 5.1 |                  114 |                  23.5 |      15.6 |      55.5 |           71.8 |
-| All combined |      4750 |     42750 |               2169 |                 5.1 |                  520 |                  24.0 |      19.0 |      49.1 |           61.2 |
+| for2004      |      1000 |      9000 |                450 |                 5.0 |                   96 |                  21.3 |      21.3 |      44.5 |          52.08 |
+| for2008      |      1850 |     16650 |                837 |                 5.0 |                  208 |                  24.9 |      16.6 |      46.5 |          64.40 |
+| for2021      |       850 |      7650 |                396 |                 5.2 |                  102 |                  25.8 |      25.8 |      55.2 |          53.36 |
+| for2021_fnf  |      1050 |      9450 |                486 |                 5.1 |                  114 |                  23.5 |      15.6 |      57.2 |          72.65 |
+| All combined |      4750 |     42750 |               2169 |                 5.1 |                  520 |                  24.0 |      18.4 |      53.3 |          65.53 |
 
 #+LATEX: \newpage
 
@@ -280,3 +270,39 @@ GV, AB and FA conceived and designed the study. FA and AB secured the research f
 * Data and code availability
 
 The study's raw data, code and outputs are available on [[https://github.com/ghislainv/fcc-nc-surfor-v2][GitHub]] and will be permanently archived in the Cirad Dataverse as soon as the article is accepted for publication.
+
+* Supplementary information
+
+#+LATEX: \renewcommand{\thetable}{S\arabic{table}}
+#+LATEX: \renewcommand{\theHtable}{S\arabic{table}}
+#+LATEX: \setcounter{table}{0}
+
+** Table S1                                                         :ignore:
+
+#+NAME: cap-loo
+#+begin_src org :results output org :exports none
+*Effect of removing each interpreter on Krippendorff's alpha.* Analysis based on the two datasets interpreted by three interpreters (=for2008= and =for2021_fnf=; 147 clusters, 1323 pixels). Interpreters are identified by their initials (A, O, S). $\Delta\alpha_{K}$ is the change in $\alpha_{K}$ (in percentage points) after removing the interpreter, relative to the $\alpha_{K}$ obtained with the three interpreters on the same pixels. A positive value indicates that the interpreter reduced the overall agreement. The 95% confidence interval (CI) of $\Delta\alpha_{K}$ was obtained by bootstrapping clusters of pixels (1,000 replicates).@@latex:\label{tab:loo}@@\\
+#+end_src
+
+#+NAME: tab:loo
+#+BEGIN_src python :results value raw :exports results :var cap=cap-loo
+import pandas as pd
+from tabulate import tabulate
+df = pd.read_csv("../outputs/1_disag/out_disag_loo_interpreter_alpha_gain.csv")
+df = df.drop(columns="median_bt")
+var_names = ["Interpreter", r"$\Delta\alpha_{K}$", "CI 2.5%", "CI 97.5%"]
+floatfmt = [".1f"] * len(var_names)
+tbl = tabulate(df, headers=var_names, tablefmt="orgtbl", floatfmt=floatfmt, showindex=False)
+header = (f"#+CAPTION: {cap}\n"
+          "#+ATTR_LATEX: :booktabs t :font \\small\n")
+header + tbl
+#+END_src
+
+#+RESULTS: tab:loo
+#+CAPTION: *Effect of removing each interpreter on Krippendorff's alpha.* Analysis based on the two datasets interpreted by three interpreters (=for2008= and =for2021_fnf=; 147 clusters, 1323 pixels). Interpreters are identified by their initials (A, O, S). $\Delta\alpha_{K}$ is the change in $\alpha_{K}$ (in percentage points) after removing the interpreter, relative to the $\alpha_{K}$ obtained with the three interpreters on the same pixels. A positive value indicates that the interpreter reduced the overall agreement. The 95% confidence interval (CI) of $\Delta\alpha_{K}$ was obtained by bootstrapping clusters (1,000 replicates).@@latex:\label{tab:loo}@@\\
+#+ATTR_LATEX: :booktabs t :font \small
+| Interpreter   |   $\Delta\alpha_{K}$ |   CI 2.5% |   CI 97.5% |
+|---------------+----------------------+-----------+------------|
+| S             |                  1.4 |      -3.0 |        6.3 |
+| A             |                 -2.6 |      -7.5 |        2.3 |
+| O             |                  0.9 |      -3.5 |        5.5 |
