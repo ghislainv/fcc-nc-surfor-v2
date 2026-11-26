@@ -229,6 +229,8 @@ val_fcc <- function(obs_suffix = "allobs") {
     mutate(for2004_pred_gfc_65=ifelse((treecover2000 >= 65) & !(lossyear %in% c(1:3)), "Forest", "NonForest")) |>
     # 7 for forest at end of year 2007
     mutate(for2008_pred_gfc_65=ifelse((treecover2000 >= 65) & !(lossyear %in% c(1:7)), "Forest", "NonForest")) |>
+    # with gain
+    mutate(for2008_pred_gfc_65_g=ifelse((treecover2000 >= 65) & !(lossyear %in% c(1:7)) | (gain %in% 1), "Forest", "NonForest")) |>
     # 20 for forest at end of year 2020
     mutate(for2021_pred_gfc_65=ifelse((treecover2000 >= 65) & !(lossyear %in% c(1:20)), "Forest", "NonForest"))
 
@@ -242,13 +244,13 @@ val_fcc <- function(obs_suffix = "allobs") {
   df_fcc <- df_cm |>
     # p1
     mutate(fcc_p1_gfc_65=ifelse(for2004_pred_gfc_65=="Forest" &
-                                  for2008_pred_gfc_65=="Forest", "stableF", NA)) |>
+                                  for2008_pred_gfc_65_g=="Forest", "stableF", NA)) |>
     mutate(fcc_p1_gfc_65=ifelse(for2004_pred_gfc_65=="Forest" &
-                                  for2008_pred_gfc_65=="NonForest", "loss", fcc_p1_gfc_65)) |>
+                                  for2008_pred_gfc_65_g=="NonForest", "loss", fcc_p1_gfc_65)) |>
     mutate(fcc_p1_gfc_65=ifelse(for2004_pred_gfc_65=="NonForest" &
-                                  for2008_pred_gfc_65=="Forest", "gain", fcc_p1_gfc_65)) |>
+                                  for2008_pred_gfc_65_g=="Forest", "gain", fcc_p1_gfc_65)) |>
     mutate(fcc_p1_gfc_65=ifelse(for2004_pred_gfc_65=="NonForest" &
-                                  for2008_pred_gfc_65=="NonForest", "stableNF", fcc_p1_gfc_65)) |>
+                                  for2008_pred_gfc_65_g=="NonForest", "stableNF", fcc_p1_gfc_65)) |>
     # p2
     mutate(fcc_p2_gfc_65=ifelse(for2008_pred_gfc_65=="Forest" &
                                   for2021_pred_gfc_65=="Forest", "stableF", NA)) |>

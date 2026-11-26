@@ -3,7 +3,6 @@
 
 # Libraries
 library(readr)
-library(glue)
 library(dplyr)
 library(here)
 library(tidyr)

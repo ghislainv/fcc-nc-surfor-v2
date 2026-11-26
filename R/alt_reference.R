@@ -1,12 +1,13 @@
-# Effect of interpreter variability on the user's accuracy (UA) of forest
+# Effect of interpreter variability on the user's accuracy (UA) and, as an
+# indication only (upper bound), on the producer's accuracy (PA) of forest
 # cover change maps (loss, gain).
 #
 # Outputs (outputs/9_alt_ref/):
 # - alt_ref_p_single.csv: P(other interpreter says forest | label of one interpreter)
-# - alt_ref_ceiling.csv: expected UA of loss/gain for a map identical to the
-#   consensus, evaluated against simulated reference data (ceiling)
-# - alt_ref_loss_gain.csv: UA and composition of pixels mapped as loss/gain
-#   (reference classes from the consensus), + expected UA with simulated reference
+# - alt_ref_ceiling.csv: expected UA and PA of loss/gain for a map identical to
+#   the consensus, evaluated against simulated reference data (ceiling)
+# - alt_ref_loss_gain.csv: UA, PA and composition of pixels mapped as loss/gain
+#   (reference classes from the consensus)
 
 # Libraries
 library(readr)
@@ -55,7 +56,7 @@ ann <- bind_rows(
 # 2. Probability of forest for each pixel
 # ==========================================
 # P(F | label of one interpreter), per date, from pairs of interpreters
-# (NI excluded). It includes the error of both interpreters (conservative).
+# (NI excluded). It reflects the variability between interpreters.
 p_single <- ann |>
   inner_join(ann, by=c("date", "plotid", "sampleid"),
              relationship="many-to-many") |>
@@ -74,7 +75,7 @@ pix <- ann |>
   mutate(cls1=ifelse(nF == 1, "F", "NF")) |>
   left_join(p_single, by=c("date", "cls1")) |>
   mutate(pF=ifelse(nF + nNF == 1, pF_single, nF / (nF + nNF)))
-write_csv(pix, here(out_dir, subdir, "alt_ref_pF_by_pix.csv"))
+# write_csv(pix, here(out_dir, subdir, "alt_ref_pF_by_pix.csv"))
 
 #' @brief Get the probability of forest for a set of pixels at a given date.
 #'
@@ -144,7 +145,11 @@ forest <- function(d, map, year, use_gain=FALSE) {
 #' - P(gain) = (1 - p1) * p2
 #'
 #' The expected UA is the mean of these probabilities over the pixels
-#' predicted in a class (no random draw).
+#' predicted in a class (no random draw). The expected PA is the sum of these
+#' probabilities over the pixels predicted in the class, divided by their sum
+#' over all pixels (ratio of expectations, approximating the expectation of
+#' the ratio). The PA is indicative only (upper bound), as pixels stable in
+#' both products are not representatively sampled.
 #'
 #' Two kinds of results are computed:
 #' 1. **Ceiling**: UA of a map identical to the consensus (pixels with
@@ -153,7 +158,7 @@ forest <- function(d, map, year, use_gain=FALSE) {
 #'    gain = non-forest at y1 and forest at y2 (via `forest()`). For each
 #'    predicted class, computes
 #'    - the UA against the consensus (`ua_cons`),
-#'    - the expected UA against the simulated reference (`ua_sim`),
+#'    - the PA against the consensus (`pa_cons`),
 #'    - the consensus composition of the predicted pixels (`prop_*`).
 #'
 #' @param ds        character. Change dataset to analyse (value of
@@ -173,10 +178,11 @@ forest <- function(d, map, year, use_gain=FALSE) {
 #' @return A list of two tibbles:
 #' \itemize{
 #'   \item `ceiling`: columns `period`, `class` (loss/gain), `n` (number of
-#'         consensus pixels in the class), `ua_ceiling` (expected UA).
+#'         consensus pixels in the class), `ua_ceiling` (expected UA),
+#'         `pa_ceiling` (expected PA).
 #'   \item `maps`: one row per map (`map` = "gfc"/"tmf") and predicted class
-#'         (`pred_class`), with `period`, `n_pred`, `ua_cons`, `ua_sim`,
-#'         `prop_loss`, `prop_gain`, `prop_stableF`, `prop_stableNF`.
+#'         (`pred_class`), with `period`, `n_pred`, `ua_cons`,
+#'         `pa_cons`, `prop_loss`, `prop_gain`, `prop_stableF`, `prop_stableNF`.
 #'         Combinations with no predicted pixel (e.g. no GFC gain in
 #'         2008--2021) are omitted.
 #' }
@@ -197,7 +203,9 @@ run_period <- function(ds, y1, y2, fcc_col, period, gfc_gain=FALSE) {
   # Ceiling: map identical to the consensus
   ceiling <- bind_rows(lapply(c("loss", "gain"), function(cl) {
     tibble(period, class=cl, n=sum(cons == cl),
-           ua_ceiling=mean(p_ref[[cl]][cons == cl]))
+           ua_ceiling=mean(p_ref[[cl]][cons == cl]),
+           # PA: ratio of expectations (indicative, upper bound)
+           pa_ceiling=sum(p_ref[[cl]][cons == cl]) / sum(p_ref[[cl]]))
   }))
 
   # GFC and TMF maps
@@ -210,7 +218,7 @@ run_period <- function(ds, y1, y2, fcc_col, period, gfc_gain=FALSE) {
       ref <- cons[pred[[cl]]]
       tibble(period, map=m, pred_class=cl, n_pred=sum(pred[[cl]]),
              ua_cons=mean(ref == cl),
-             ua_sim=mean(p_ref[[cl]][pred[[cl]]]),
+             pa_cons=sum(pred[[cl]] & cons == cl) / sum(cons == cl),
              prop_loss=mean(ref == "loss"), prop_gain=mean(ref == "gain"),
              prop_stableF=mean(ref == "stableF"),
              prop_stableNF=mean(ref == "stableNF"))
@@ -225,11 +233,11 @@ res <- list(
   run_period("change_0821", 2008, 2021, "fcc_p2", "2008--2021", gfc_gain=FALSE))
 
 bind_rows(lapply(res, `[[`, "ceiling")) |>
-  mutate(ua_ceiling=round(ua_ceiling, 3)) |>
+  mutate(across(c(ua_ceiling, pa_ceiling), ~ round(.x, 3))) |>
   write_csv(here(out_dir, subdir, "alt_ref_ceiling.csv"))
 
 bind_rows(lapply(res, `[[`, "maps")) |>
-  mutate(across(starts_with(c("ua_", "prop_")), ~ round(.x, 3))) |>
+  mutate(across(starts_with(c("ua_", "pa_", "prop_")), ~ round(.x, 3))) |>
   write_csv(here(out_dir, subdir, "alt_ref_loss_gain.csv"))
 
 # End
